@@ -17,13 +17,13 @@ export default function PrivacyPolicyPage() {
             <span>U.S. Covid Vaccine Injuries</span>
           </Link>
           <ul className="nav-links">
-            <li><Link href="/#data">Data</Link></li>
+            <li><Link href="/#funnel">The Gap</Link></li>
             <li><Link href="/#comparison">Programs</Link></li>
             <li><Link href="/faq">FAQ</Link></li>
-            <li><Link href="/resources">Resources</Link></li>
+            <li><Link href="/resources">Data</Link></li>
             <li><Link href="/survey">Survey</Link></li>
           </ul>
-          <Link href="/#action" className="nav-cta">Take Action</Link>
+          <Link href="/#action" className="nav-cta">Contact Congress</Link>
         </div>
       </nav>
 
@@ -35,185 +35,620 @@ export default function PrivacyPolicyPage() {
           </div>
 
           <div className="legal-content">
+            {/* Quick Summary */}
+            <section className="legal-section legal-summary">
+              <h2>Quick Summary</h2>
+              <p><strong>We respect your privacy.</strong> Here&apos;s the short version:</p>
+              <table className="legal-table">
+                <tbody>
+                  <tr>
+                    <th>What we collect</th>
+                    <td>Survey responses, email (if you opt in), ZIP code for rep lookup</td>
+                  </tr>
+                  <tr>
+                    <th>Why</th>
+                    <td>To support vaccine injury compensation reform and keep you informed</td>
+                  </tr>
+                  <tr>
+                    <th>Who sees it</th>
+                    <td>Only us and essential service providers—we never sell your data</td>
+                  </tr>
+                  <tr>
+                    <th>Your control</th>
+                    <td>You can access, correct, or delete your data anytime</td>
+                  </tr>
+                  <tr>
+                    <th>Contact</th>
+                    <td><a href="mailto:privacy@covidvaccineinjury.us">privacy@covidvaccineinjury.us</a></td>
+                  </tr>
+                </tbody>
+              </table>
+              <p className="legal-note"><em>Read the full policy below for complete details.</em></p>
+            </section>
+
+            {/* Table of Contents */}
             <section className="legal-section">
-              <h2>Introduction</h2>
+              <h2>Table of Contents</h2>
+              <ol className="legal-toc">
+                <li><a href="#who-we-are">Who We Are</a></li>
+                <li><a href="#information-we-collect">Information We Collect</a></li>
+                <li><a href="#how-we-use">How We Use Your Information</a></li>
+                <li><a href="#sensitive-health">Sensitive Health Information</a></li>
+                <li><a href="#information-sharing">Information Sharing</a></li>
+                <li><a href="#third-party">Third-Party Services</a></li>
+                <li><a href="#cookies">Cookies &amp; Analytics</a></li>
+                <li><a href="#data-security">Data Security</a></li>
+                <li><a href="#data-retention">Data Retention</a></li>
+                <li><a href="#your-rights">Your Rights</a></li>
+                <li><a href="#state-privacy">State Privacy Rights</a></li>
+                <li><a href="#childrens-privacy">Children&apos;s Privacy</a></li>
+                <li><a href="#international">International Users</a></li>
+                <li><a href="#changes">Changes to This Policy</a></li>
+                <li><a href="#contact">Contact Us</a></li>
+              </ol>
+            </section>
+
+            {/* 1. Who We Are */}
+            <section className="legal-section" id="who-we-are">
+              <h2>1. Who We Are</h2>
               <p>
-                Aletheia LLC, operating as U.S. Covid Vaccine Injuries (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;), is committed to protecting your privacy.
-                This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you
-                visit our website covidvaccineinjuries.us (the &quot;Site&quot;) and use our services.
+                Aletheia LLC, operating as <strong>U.S. Covid Vaccine Injuries</strong> (&quot;we,&quot; &quot;our,&quot; or &quot;us&quot;),
+                operates the website <a href="https://www.covidvaccineinjury.us">covidvaccineinjury.us</a> (the &quot;Site&quot;).
               </p>
               <p>
-                Please read this Privacy Policy carefully. By accessing or using our Site, you acknowledge that you
-                have read, understood, and agree to be bound by this Privacy Policy. If you do not agree with the
-                terms of this Privacy Policy, please do not access the Site.
+                We are a health policy advocacy organization working to reform COVID-19 vaccine injury compensation
+                in the United States. We are not a healthcare provider, law firm, or government agency.
+              </p>
+              <p>
+                <strong>Our mission:</strong> Advocate for transferring COVID-19 vaccine injury claims from the
+                Countermeasures Injury Compensation Program (CICP) to the National Vaccine Injury Compensation Program (VICP).
               </p>
             </section>
 
-            <section className="legal-section">
-              <h2>Information We Collect</h2>
+            {/* 2. Information We Collect */}
+            <section className="legal-section" id="information-we-collect">
+              <h2>2. Information We Collect</h2>
 
               <h3>Information You Provide Directly</h3>
-              <p>We may collect information that you voluntarily provide when you:</p>
-              <ul>
-                <li><strong>Complete our survey:</strong> Responses to questions about vaccine injury experiences, beliefs about compensation systems, ZIP code, and optionally your email address</li>
-                <li><strong>Subscribe to updates:</strong> Name, email address, phone number (optional), and ZIP code (optional)</li>
-                <li><strong>Use our representative lookup tool:</strong> ZIP code to find your congressional representatives</li>
-                <li><strong>Contact us:</strong> Any information you include in correspondence with us</li>
-              </ul>
+              <table className="legal-table">
+                <thead>
+                  <tr>
+                    <th>Data Type</th>
+                    <th>When Collected</th>
+                    <th>Required?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Survey responses</strong></td>
+                    <td>When you complete our survey</td>
+                    <td>Voluntary</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Email address</strong></td>
+                    <td>When you subscribe to updates</td>
+                    <td>Voluntary</td>
+                  </tr>
+                  <tr>
+                    <td><strong>ZIP code</strong></td>
+                    <td>Representative lookup or survey</td>
+                    <td>Voluntary</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Injury details</strong></td>
+                    <td>Survey questions about your experience</td>
+                    <td>Voluntary</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Contact messages</strong></td>
+                    <td>When you email or message us</td>
+                    <td>Voluntary</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p><strong>Important:</strong> All information you provide is voluntary. You can use our educational resources without providing any personal information.</p>
 
               <h3>Information Collected Automatically</h3>
-              <p>When you visit our Site, we may automatically collect certain information, including:</p>
+              <p>When you visit our Site, we automatically collect:</p>
               <ul>
-                <li><strong>Device Information:</strong> Browser type, operating system, device type</li>
-                <li><strong>Usage Information:</strong> Pages visited, time spent on pages, links clicked</li>
-                <li><strong>Location Information:</strong> General geographic location based on IP address</li>
-                <li><strong>Analytics Data:</strong> We use Google Analytics to understand how visitors interact with our Site</li>
+                <li><strong>Device information:</strong> Browser type, operating system, screen size</li>
+                <li><strong>Usage data:</strong> Pages visited, time on site, referring URL</li>
+                <li><strong>IP address:</strong> Used to determine general geographic location (city/region level)</li>
+                <li><strong>Cookies:</strong> Small files stored on your device (see <a href="#cookies">Cookies &amp; Analytics</a>)</li>
+              </ul>
+
+              <h3>Information We Do NOT Collect</h3>
+              <ul>
+                <li>Social Security numbers</li>
+                <li>Medical records or documentation</li>
+                <li>Financial information or payment details</li>
+                <li>Biometric data</li>
+                <li>Precise geolocation (GPS)</li>
               </ul>
             </section>
 
-            <section className="legal-section">
-              <h2>How We Use Your Information</h2>
-              <p>We use the information we collect for the following purposes:</p>
+            {/* 3. How We Use Your Information */}
+            <section className="legal-section" id="how-we-use">
+              <h2>3. How We Use Your Information</h2>
+              <table className="legal-table">
+                <thead>
+                  <tr>
+                    <th>Purpose</th>
+                    <th>Legal Basis</th>
+                    <th>Data Used</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Advocacy &amp; research</strong></td>
+                    <td>Legitimate interest</td>
+                    <td>Aggregate survey data</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Email updates</strong></td>
+                    <td>Your consent</td>
+                    <td>Email address</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Representative lookup</strong></td>
+                    <td>Service delivery</td>
+                    <td>ZIP code (not stored)</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Site improvement</strong></td>
+                    <td>Legitimate interest</td>
+                    <td>Analytics data</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Respond to inquiries</strong></td>
+                    <td>Service delivery</td>
+                    <td>Contact information</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Legal compliance</strong></td>
+                    <td>Legal obligation</td>
+                    <td>As required</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p><strong>We do NOT use your information to:</strong></p>
               <ul>
-                <li><strong>Advocacy and Research:</strong> To understand the impact of vaccine injury compensation policies and support reform efforts</li>
-                <li><strong>Communication:</strong> To send updates about legislative developments, advocacy efforts, and relevant news (if you have opted in)</li>
-                <li><strong>Site Improvement:</strong> To analyze usage patterns and improve our Site&apos;s functionality and content</li>
-                <li><strong>Representative Lookup:</strong> To help you identify and contact your congressional representatives</li>
-                <li><strong>Aggregate Analysis:</strong> To compile anonymous, aggregate statistics about survey responses and site usage</li>
+                <li>Sell to third parties</li>
+                <li>Target advertising</li>
+                <li>Make automated decisions about you</li>
+                <li>Contact you without consent</li>
               </ul>
             </section>
 
-            <section className="legal-section">
-              <h2>Information Sharing and Disclosure</h2>
-              <p>We may share your information in the following circumstances:</p>
+            {/* 4. Sensitive Health Information */}
+            <section className="legal-section" id="sensitive-health">
+              <h2>4. Sensitive Health Information</h2>
+              <p>Our survey may collect information about your health experiences, including:</p>
+              <ul>
+                <li>Whether you experienced a vaccine-related injury</li>
+                <li>Types of symptoms or conditions</li>
+                <li>Whether you filed a compensation claim</li>
+                <li>Claim outcomes</li>
+              </ul>
+
+              <h3>How we protect this information:</h3>
+              <ol>
+                <li><strong>Anonymization:</strong> Survey responses are stored separately from identifying information when possible</li>
+                <li><strong>Aggregation:</strong> We only publish aggregate statistics (e.g., &quot;73% of respondents experienced X&quot;)</li>
+                <li><strong>No medical advice:</strong> We do not use this information to provide medical advice or diagnosis</li>
+                <li><strong>Limited access:</strong> Only authorized team members can access individual responses</li>
+                <li><strong>Encryption:</strong> Health-related data is encrypted in transit and at rest</li>
+              </ol>
+              <p><strong>Your choice:</strong> You can skip any survey question you&apos;re not comfortable answering.</p>
+            </section>
+
+            {/* 5. Information Sharing */}
+            <section className="legal-section" id="information-sharing">
+              <h2>5. Information Sharing</h2>
+
+              <h3>We Share Information With:</h3>
+              <table className="legal-table">
+                <thead>
+                  <tr>
+                    <th>Recipient</th>
+                    <th>What We Share</th>
+                    <th>Why</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Service providers</strong></td>
+                    <td>Technical data</td>
+                    <td>Hosting, email delivery, analytics</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Advocacy partners</strong></td>
+                    <td>Aggregate data only</td>
+                    <td>Coordinated reform efforts</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Public</strong></td>
+                    <td>Anonymous statistics</td>
+                    <td>Educational content, advocacy</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Legal authorities</strong></td>
+                    <td>As required by law</td>
+                    <td>Legal compliance</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3>We Do NOT:</h3>
+              <ul>
+                <li>Sell your personal information</li>
+                <li>Share individual survey responses publicly</li>
+                <li>Provide your contact info to political campaigns</li>
+                <li>Share data with advertisers</li>
+              </ul>
 
               <h3>Advocacy Partners</h3>
+              <p>We work with allied organizations advocating for vaccine injury compensation reform, such as:</p>
+              <ul>
+                <li>React19</li>
+                <li>Vaccine Injured Petitioners Bar Association</li>
+                <li>Other 501(c)(3) and 501(c)(4) health advocacy groups</li>
+              </ul>
               <p>
-                We may share information with allied advocacy organizations working on vaccine injury compensation reform.
-                This sharing helps coordinate advocacy efforts and amplify the voices of affected individuals.
-                We only partner with organizations that share our commitment to privacy and data protection.
-              </p>
-
-              <h3>Aggregate Data</h3>
-              <p>
-                We may share anonymous, aggregated data (such as survey statistics) publicly to support advocacy efforts.
-                This data does not identify any individual.
-              </p>
-
-              <h3>Legal Requirements</h3>
-              <p>
-                We may disclose your information if required to do so by law or in response to valid requests by
-                public authorities (e.g., a court or government agency).
-              </p>
-
-              <h3>Service Providers</h3>
-              <p>
-                We may share information with third-party service providers who perform services on our behalf,
-                such as web hosting, analytics, and email delivery. These providers are contractually obligated
-                to protect your information.
+                When we share with partners, we share <strong>aggregate, anonymized data only</strong> (e.g., &quot;12,000 survey
+                respondents support VICP transfer&quot;). We do not share your email, name, or individual responses without
+                your explicit consent.
               </p>
             </section>
 
-            <section className="legal-section">
-              <h2>Cookies and Tracking Technologies</h2>
-              <p>We use cookies and similar tracking technologies to:</p>
+            {/* 6. Third-Party Services */}
+            <section className="legal-section" id="third-party">
+              <h2>6. Third-Party Services</h2>
+              <p>We use the following third-party services:</p>
+              <table className="legal-table">
+                <thead>
+                  <tr>
+                    <th>Service</th>
+                    <th>Purpose</th>
+                    <th>Privacy Policy</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Vercel</strong></td>
+                    <td>Website hosting</td>
+                    <td><a href="https://vercel.com/legal/privacy-policy" target="_blank" rel="noopener noreferrer">vercel.com/legal/privacy-policy</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Payload CMS</strong></td>
+                    <td>Content management &amp; survey storage</td>
+                    <td><a href="https://payloadcms.com/privacy" target="_blank" rel="noopener noreferrer">payloadcms.com/privacy</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Google Analytics</strong></td>
+                    <td>Site usage analytics</td>
+                    <td><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">policies.google.com/privacy</a></td>
+                  </tr>
+                  <tr>
+                    <td><strong>Google Civic API</strong></td>
+                    <td>Representative lookup</td>
+                    <td><a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">policies.google.com/privacy</a></td>
+                  </tr>
+                </tbody>
+              </table>
+              <p>These providers are contractually obligated to:</p>
               <ul>
-                <li>Analyze site traffic and usage patterns (via Google Analytics)</li>
-                <li>Remember your preferences</li>
-                <li>Understand how you interact with our Site</li>
+                <li>Process data only as we instruct</li>
+                <li>Maintain appropriate security measures</li>
+                <li>Not use your data for their own purposes</li>
               </ul>
-              <p>
-                You can control cookies through your browser settings. Note that disabling cookies may affect
-                the functionality of certain features on our Site.
-              </p>
+            </section>
+
+            {/* 7. Cookies & Analytics */}
+            <section className="legal-section" id="cookies">
+              <h2>7. Cookies &amp; Analytics</h2>
+
+              <h3>What Are Cookies?</h3>
+              <p>Cookies are small text files stored on your device that help us understand how you use our Site.</p>
+
+              <h3>Cookies We Use</h3>
+              <table className="legal-table">
+                <thead>
+                  <tr>
+                    <th>Cookie Type</th>
+                    <th>Purpose</th>
+                    <th>Duration</th>
+                    <th>Required?</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Essential</strong></td>
+                    <td>Site functionality</td>
+                    <td>Session</td>
+                    <td>Yes</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Analytics</strong></td>
+                    <td>Usage statistics</td>
+                    <td>2 years</td>
+                    <td>No</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Preferences</strong></td>
+                    <td>Remember your choices</td>
+                    <td>1 year</td>
+                    <td>No</td>
+                  </tr>
+                </tbody>
+              </table>
 
               <h3>Google Analytics</h3>
-              <p>
-                We use Google Analytics to collect information about how visitors use our Site. Google Analytics
-                uses cookies to collect information such as how often users visit the Site, what pages they visit,
-                and what other sites they visited prior to coming to our Site. We use this information to improve
-                our Site. Google&apos;s ability to use and share information collected by Google Analytics is restricted
-                by the <a href="https://policies.google.com/terms" target="_blank" rel="noopener noreferrer">Google Analytics Terms of Service</a> and
-                the <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.
-              </p>
-            </section>
-
-            <section className="legal-section">
-              <h2>Data Security</h2>
-              <p>
-                We implement appropriate technical and organizational security measures to protect your information
-                against unauthorized access, alteration, disclosure, or destruction. However, no method of transmission
-                over the Internet or electronic storage is 100% secure, and we cannot guarantee absolute security.
-              </p>
-            </section>
-
-            <section className="legal-section">
-              <h2>Data Retention</h2>
-              <p>
-                We retain your information for as long as necessary to fulfill the purposes outlined in this Privacy Policy,
-                unless a longer retention period is required or permitted by law. Survey responses and subscriber information
-                are retained to support ongoing advocacy efforts and to maintain historical records of public sentiment
-                regarding vaccine injury compensation.
-              </p>
-            </section>
-
-            <section className="legal-section">
-              <h2>Your Rights and Choices</h2>
-              <p>You have the following rights regarding your information:</p>
+              <p>We use Google Analytics 4 to understand:</p>
               <ul>
-                <li><strong>Access:</strong> You may request access to the personal information we hold about you</li>
-                <li><strong>Correction:</strong> You may request that we correct inaccurate or incomplete information</li>
-                <li><strong>Deletion:</strong> You may request that we delete your personal information, subject to certain exceptions</li>
-                <li><strong>Opt-Out:</strong> You may unsubscribe from our email communications at any time by clicking the unsubscribe link in any email or by contacting us</li>
+                <li>How many people visit our Site</li>
+                <li>Which pages are most viewed</li>
+                <li>How visitors find us (search, social, direct)</li>
+                <li>General geographic distribution of visitors</li>
               </ul>
-              <p>To exercise any of these rights, please contact us at privacy@covidvaccineinjuries.us.</p>
+              <p><strong>What Google Analytics collects:</strong></p>
+              <ul>
+                <li>Pages viewed and time on page</li>
+                <li>Device and browser information</li>
+                <li>Approximate location (city level)</li>
+                <li>Referring website</li>
+              </ul>
+              <p><strong>What it does NOT collect:</strong></p>
+              <ul>
+                <li>Your name or email</li>
+                <li>Survey responses</li>
+                <li>Any information you type into forms</li>
+              </ul>
+
+              <h3>Managing Cookies</h3>
+              <p>You can control cookies through:</p>
+              <ol>
+                <li><strong>Browser settings:</strong> Most browsers let you block or delete cookies</li>
+                <li><strong>Google Analytics opt-out:</strong> Install the <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener noreferrer">Google Analytics Opt-out Browser Add-on</a></li>
+                <li><strong>Do Not Track:</strong> We honor Do Not Track browser signals</li>
+              </ol>
+              <p><strong>Note:</strong> Blocking essential cookies may affect Site functionality.</p>
             </section>
 
-            <section className="legal-section">
-              <h2>Children&apos;s Privacy</h2>
+            {/* 8. Data Security */}
+            <section className="legal-section" id="data-security">
+              <h2>8. Data Security</h2>
+              <p>We implement industry-standard security measures:</p>
+              <table className="legal-table">
+                <thead>
+                  <tr>
+                    <th>Measure</th>
+                    <th>Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Encryption in transit</strong></td>
+                    <td>All data transmitted via HTTPS/TLS</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Encryption at rest</strong></td>
+                    <td>Database encryption for stored data</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Access controls</strong></td>
+                    <td>Role-based access, principle of least privilege</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Secure hosting</strong></td>
+                    <td>Enterprise-grade cloud infrastructure</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Regular updates</strong></td>
+                    <td>Security patches applied promptly</td>
+                  </tr>
+                </tbody>
+              </table>
               <p>
-                Our Site is not intended for children under the age of 13. We do not knowingly collect personal
-                information from children under 13. If you are a parent or guardian and believe your child has
-                provided us with personal information, please contact us so we can delete such information.
+                <strong>No system is 100% secure.</strong> While we take reasonable precautions, we cannot guarantee
+                absolute security. If you believe your data has been compromised, contact us immediately.
               </p>
             </section>
 
-            <section className="legal-section">
-              <h2>California Privacy Rights</h2>
+            {/* 9. Data Retention */}
+            <section className="legal-section" id="data-retention">
+              <h2>9. Data Retention</h2>
+              <table className="legal-table">
+                <thead>
+                  <tr>
+                    <th>Data Type</th>
+                    <th>Retention Period</th>
+                    <th>Reason</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Survey responses</strong></td>
+                    <td>7 years or until legislation passes</td>
+                    <td>Historical advocacy record</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Email subscribers</strong></td>
+                    <td>Until you unsubscribe + 30 days</td>
+                    <td>Communication + grace period</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Analytics data</strong></td>
+                    <td>26 months</td>
+                    <td>Google Analytics default</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Contact inquiries</strong></td>
+                    <td>3 years</td>
+                    <td>Follow-up and records</td>
+                  </tr>
+                  <tr>
+                    <td><strong>ZIP code lookups</strong></td>
+                    <td>Not stored</td>
+                    <td>Processed in real-time only</td>
+                  </tr>
+                </tbody>
+              </table>
+              <p><strong>After retention periods expire,</strong> data is either deleted or anonymized so it can no longer identify you.</p>
+              <p><strong>You can request early deletion</strong> at any time (see <a href="#your-rights">Your Rights</a>).</p>
+            </section>
+
+            {/* 10. Your Rights */}
+            <section className="legal-section" id="your-rights">
+              <h2>10. Your Rights</h2>
+              <p>You have the right to:</p>
+              <table className="legal-table">
+                <thead>
+                  <tr>
+                    <th>Right</th>
+                    <th>Description</th>
+                    <th>How to Exercise</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td><strong>Access</strong></td>
+                    <td>Get a copy of your data</td>
+                    <td>Email us</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Correction</strong></td>
+                    <td>Fix inaccurate information</td>
+                    <td>Email us</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Deletion</strong></td>
+                    <td>Have your data removed</td>
+                    <td>Email us</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Portability</strong></td>
+                    <td>Receive data in a common format</td>
+                    <td>Email us</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Opt-out</strong></td>
+                    <td>Stop receiving emails</td>
+                    <td>Unsubscribe link or email us</td>
+                  </tr>
+                  <tr>
+                    <td><strong>Withdraw consent</strong></td>
+                    <td>Change your mind anytime</td>
+                    <td>Email us</td>
+                  </tr>
+                </tbody>
+              </table>
+
+              <h3>How to Exercise Your Rights</h3>
+              <p><strong>Email:</strong> <a href="mailto:privacy@covidvaccineinjury.us">privacy@covidvaccineinjury.us</a></p>
+              <p><strong>Subject line:</strong> &quot;Privacy Request - [Your Request Type]&quot;</p>
+              <p><strong>What to include:</strong></p>
+              <ul>
+                <li>Your name (if you provided it)</li>
+                <li>Email address associated with your data</li>
+                <li>Specific request (access, deletion, etc.)</li>
+              </ul>
+              <p><strong>Response time:</strong> We will respond within 30 days. Complex requests may take up to 45 days, and we&apos;ll notify you if we need more time.</p>
+              <p><strong>Verification:</strong> We may ask you to verify your identity to protect against unauthorized requests.</p>
+            </section>
+
+            {/* 11. State Privacy Rights */}
+            <section className="legal-section" id="state-privacy">
+              <h2>11. State Privacy Rights</h2>
+
+              <h3>California Residents (CCPA/CPRA)</h3>
+              <p>If you are a California resident, you have additional rights:</p>
+              <ul>
+                <li><strong>Right to know:</strong> What personal information we collect and why</li>
+                <li><strong>Right to delete:</strong> Request deletion of your data</li>
+                <li><strong>Right to opt-out of sale:</strong> We do not sell personal information</li>
+                <li><strong>Right to non-discrimination:</strong> We won&apos;t treat you differently for exercising your rights</li>
+                <li><strong>Right to correct:</strong> Fix inaccurate information</li>
+                <li><strong>Right to limit sensitive data use:</strong> Control how we use health-related information</li>
+              </ul>
               <p>
-                If you are a California resident, you may have additional rights under the California Consumer
-                Privacy Act (CCPA), including the right to know what personal information we collect and how we
-                use it, the right to request deletion, and the right to opt out of the sale of personal information.
-                We do not sell personal information.
+                <strong>To exercise California rights:</strong> Email <a href="mailto:privacy@covidvaccineinjury.us">privacy@covidvaccineinjury.us</a> with
+                &quot;California Privacy Request&quot; in the subject line.
+              </p>
+
+              <h3>Virginia, Colorado, Connecticut, Utah Residents</h3>
+              <p>Similar rights apply under your state&apos;s privacy laws. Contact us using the same process.</p>
+            </section>
+
+            {/* 12. Children's Privacy */}
+            <section className="legal-section" id="childrens-privacy">
+              <h2>12. Children&apos;s Privacy</h2>
+              <p>Our Site is <strong>not intended for children under 13.</strong></p>
+              <p>
+                We do not knowingly collect personal information from children under 13. If you are a parent or guardian
+                and believe your child has provided information to us, please contact us immediately
+                at <a href="mailto:privacy@covidvaccineinjury.us">privacy@covidvaccineinjury.us</a> and we will delete it.
+              </p>
+              <p>If you are between 13 and 18, please get your parent or guardian&apos;s permission before providing any personal information.</p>
+            </section>
+
+            {/* 13. International Users */}
+            <section className="legal-section" id="international">
+              <h2>13. International Users</h2>
+              <p>Our Site is operated in the <strong>United States</strong> and intended primarily for U.S. residents.</p>
+              <p>If you access our Site from outside the United States:</p>
+              <ul>
+                <li>Your information will be transferred to and processed in the U.S.</li>
+                <li>U.S. privacy laws may differ from your country&apos;s laws</li>
+                <li>By using our Site, you consent to this transfer</li>
+              </ul>
+              <p>
+                <strong>For EU/UK residents:</strong> We process data based on legitimate interest for advocacy purposes
+                and your consent for communications. You may have additional rights under GDPR—contact us to exercise them.
               </p>
             </section>
 
-            <section className="legal-section">
-              <h2>International Users</h2>
-              <p>
-                Our Site is operated in the United States. If you are located outside the United States, please
-                be aware that information you provide to us will be transferred to and processed in the United States.
-                By using our Site, you consent to this transfer and processing.
-              </p>
+            {/* 14. Changes to This Policy */}
+            <section className="legal-section" id="changes">
+              <h2>14. Changes to This Policy</h2>
+              <p>We may update this Privacy Policy to reflect:</p>
+              <ul>
+                <li>Changes in our practices</li>
+                <li>New features or services</li>
+                <li>Legal or regulatory requirements</li>
+              </ul>
+              <p><strong>How we notify you:</strong></p>
+              <ul>
+                <li><strong>Minor changes:</strong> Updated &quot;Last Updated&quot; date</li>
+                <li><strong>Material changes:</strong> Email notification (if you&apos;re subscribed) and prominent notice on our Site</li>
+              </ul>
+              <p><strong>Your continued use</strong> of our Site after changes constitutes acceptance of the updated policy.</p>
             </section>
 
-            <section className="legal-section">
-              <h2>Changes to This Privacy Policy</h2>
-              <p>
-                We may update this Privacy Policy from time to time. We will notify you of any changes by posting
-                the new Privacy Policy on this page and updating the &quot;Last Updated&quot; date. You are advised to review
-                this Privacy Policy periodically for any changes.
-              </p>
-            </section>
-
-            <section className="legal-section">
-              <h2>Contact Us</h2>
-              <p>If you have questions or concerns about this Privacy Policy or our data practices, please contact us at:</p>
+            {/* 15. Contact Us */}
+            <section className="legal-section" id="contact">
+              <h2>15. Contact Us</h2>
+              <p><strong>Questions about this Privacy Policy?</strong></p>
+              <table className="legal-table">
+                <tbody>
+                  <tr>
+                    <th>Email</th>
+                    <td><a href="mailto:privacy@covidvaccineinjury.us">privacy@covidvaccineinjury.us</a></td>
+                  </tr>
+                  <tr>
+                    <th>Website</th>
+                    <td><a href="https://www.covidvaccineinjury.us">covidvaccineinjury.us</a></td>
+                  </tr>
+                </tbody>
+              </table>
               <div className="legal-contact">
                 <p><strong>Aletheia LLC</strong></p>
-                <p><strong>Email:</strong> privacy@covidvaccineinjuries.us</p>
-                <p><strong>Website:</strong> covidvaccineinjuries.us</p>
+                <p>Operating as U.S. Covid Vaccine Injuries</p>
               </div>
+              <p>We aim to respond to all privacy inquiries within 5 business days.</p>
+              <p className="legal-note">
+                <em>This Privacy Policy was drafted to be transparent and easy to understand. If anything is unclear, please don&apos;t hesitate to ask.</em>
+              </p>
             </section>
           </div>
         </div>
