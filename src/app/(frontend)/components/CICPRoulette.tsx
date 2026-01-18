@@ -28,7 +28,11 @@ interface GameState {
   showResult: boolean;
 }
 
-const CICPRoulette: React.FC = () => {
+interface CICPRouletteProps {
+  compact?: boolean;
+}
+
+const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false }) => {
   const [gameState, setGameState] = useState<GameState>({
     mode: 'cicp',
     attempts: 0,
@@ -335,7 +339,7 @@ const CICPRoulette: React.FC = () => {
   return (
     <>
       <canvas ref={canvasRef} className="confetti-canvas" />
-      <div className={`cicp-roulette-v2 ${gameState.mode === 'vicp' ? 'vicp-mode' : ''}`}>
+      <div className={`cicp-roulette-v2 ${gameState.mode === 'vicp' ? 'vicp-mode' : ''} ${compact ? 'compact' : ''}`}>
         <style jsx>{`
           .confetti-canvas {
             position: fixed;
@@ -781,6 +785,180 @@ const CICPRoulette: React.FC = () => {
             .stats-comparison { gap: 8px; }
             .stat-box { padding: 12px; }
             .stat-box-rate { font-size: 22px; }
+          }
+
+          /* Compact mode for modal */
+          .cicp-roulette-v2.compact {
+            padding: 20px;
+            max-width: 380px;
+            border-radius: 16px;
+          }
+
+          .compact .mode-toggle {
+            margin-bottom: 16px;
+            padding: 10px;
+            gap: 10px;
+          }
+
+          .compact .mode-label {
+            font-size: 12px;
+            padding: 6px 12px;
+          }
+
+          .compact .toggle-switch {
+            width: 48px;
+            height: 24px;
+          }
+
+          .compact .toggle-switch::after {
+            width: 18px;
+            height: 18px;
+            top: 3px;
+            left: 3px;
+          }
+
+          .compact .toggle-switch.vicp::after {
+            transform: translateX(24px);
+          }
+
+          .compact .game-title {
+            font-size: 20px;
+            margin-bottom: 2px;
+          }
+
+          .compact .game-subtitle {
+            font-size: 12px;
+            margin-bottom: 4px;
+          }
+
+          .compact .current-odds-badge {
+            padding: 4px 12px;
+            font-size: 11px;
+            margin-bottom: 16px;
+          }
+
+          .compact .chamber-container {
+            width: 140px;
+            height: 140px;
+            margin-bottom: 16px;
+          }
+
+          .compact .chamber {
+            width: 140px;
+            height: 140px;
+            border-width: 3px;
+          }
+
+          .compact .chamber::after {
+            width: 32px;
+            height: 32px;
+            border-width: 2px;
+          }
+
+          .compact .chamber-pointer {
+            border-left-width: 10px;
+            border-right-width: 10px;
+            border-top-width: 16px;
+            top: -10px;
+          }
+
+          .compact .odds-explainer {
+            margin-bottom: 12px;
+            font-size: 11px;
+            gap: 16px;
+          }
+
+          .compact .odds-swatch {
+            width: 12px;
+            height: 12px;
+          }
+
+          .compact .stats-comparison {
+            gap: 8px;
+            margin-bottom: 12px;
+          }
+
+          .compact .stat-box {
+            padding: 10px;
+            border-radius: 8px;
+          }
+
+          .compact .stat-box-title {
+            font-size: 9px;
+            margin-bottom: 4px;
+          }
+
+          .compact .stat-box-rate {
+            font-size: 20px;
+            margin-bottom: 2px;
+          }
+
+          .compact .stat-box-detail {
+            font-size: 9px;
+          }
+
+          .compact .your-stats {
+            padding: 12px;
+            margin-bottom: 16px;
+            border-radius: 8px;
+          }
+
+          .compact .your-stats-title {
+            font-size: 9px;
+            margin-bottom: 8px;
+          }
+
+          .compact .your-stat-value {
+            font-size: 24px;
+          }
+
+          .compact .your-stat-label {
+            font-size: 9px;
+          }
+
+          .compact .trigger-btn {
+            padding: 12px 32px;
+            font-size: 14px;
+          }
+
+          .compact .result-message {
+            margin-top: 12px;
+            padding: 10px;
+            font-size: 13px;
+            border-radius: 8px;
+          }
+
+          .compact .action-buttons {
+            margin-top: 12px;
+            gap: 8px;
+          }
+
+          .compact .secondary-btn {
+            padding: 8px 16px;
+            font-size: 12px;
+          }
+
+          .compact .insight-box {
+            margin-top: 12px;
+            padding: 10px;
+            font-size: 12px;
+            border-radius: 8px;
+          }
+
+          .compact .cta-box {
+            margin-top: 12px;
+            padding: 12px;
+            border-radius: 8px;
+          }
+
+          .compact .cta-text {
+            font-size: 12px;
+            margin-bottom: 10px;
+          }
+
+          .compact .cta-btn {
+            padding: 8px 20px;
+            font-size: 11px;
           }
         `}</style>
 

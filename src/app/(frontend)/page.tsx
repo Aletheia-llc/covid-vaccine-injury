@@ -1023,7 +1023,7 @@ export default function HomePage() {
             <button className="modal-close" onClick={() => setRouletteOpen(false)} aria-label="Close modal">
               ✕
             </button>
-            <CICPRoulette />
+            <CICPRoulette compact />
           </div>
         </div>
       )}
