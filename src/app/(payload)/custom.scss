@@ -1,0 +1,187 @@
+// Custom Payload Admin Styling
+// Matches the frontend navy & gold aesthetic
+
+:root {
+  // Override Payload's default colors
+  --theme-elevation-0: #0d1b2a;
+  --theme-elevation-50: #12232e;
+  --theme-elevation-100: #1b263b;
+  --theme-elevation-150: #1f2d3d;
+  --theme-elevation-200: #243447;
+  --theme-elevation-250: #2a3d52;
+  --theme-elevation-300: #344a5f;
+  --theme-elevation-350: #3d566b;
+  --theme-elevation-400: #4a6277;
+  --theme-elevation-450: #576e83;
+  --theme-elevation-500: #647a8f;
+  --theme-elevation-550: #7a8fa1;
+  --theme-elevation-600: #90a4b3;
+  --theme-elevation-650: #a6b8c5;
+  --theme-elevation-700: #bcccd7;
+  --theme-elevation-750: #d2e0e9;
+  --theme-elevation-800: #e8f0f5;
+  --theme-elevation-850: #f0f5f8;
+  --theme-elevation-900: #f8fafc;
+  --theme-elevation-950: #fcfdfe;
+  --theme-elevation-1000: #ffffff;
+
+  // Brand colors
+  --theme-success-500: #2d5a3d;
+  --theme-error-500: #8b2635;
+  --theme-warning-500: #c4a052;
+}
+
+// Dark theme (default for Payload)
+[data-theme="dark"] {
+  --theme-bg: #0d1b2a;
+  --theme-input-bg: #1b263b;
+  --theme-elevation-0: #0d1b2a;
+  --theme-elevation-50: #0f1f2e;
+  --theme-elevation-100: #1b263b;
+  --theme-elevation-150: #1f2d3d;
+  --theme-elevation-200: #243447;
+  --theme-elevation-250: #2a3d52;
+  --theme-elevation-300: #344a5f;
+  --theme-text: #f0f5f8;
+}
+
+// Light theme overrides
+[data-theme="light"] {
+  --theme-bg: #f8fafc;
+  --theme-elevation-0: #ffffff;
+  --theme-elevation-100: #f0f5f8;
+  --theme-elevation-200: #e8f0f5;
+}
+
+// Custom accent color (gold)
+.btn--style-primary,
+.btn--style-primary:hover {
+  background-color: #c4a052 !important;
+  color: #0d1b2a !important;
+}
+
+.btn--style-primary:hover {
+  background-color: #d4b062 !important;
+}
+
+// Navigation styling
+.nav__link:hover,
+.nav__link--active {
+  color: #c4a052 !important;
+}
+
+// Nav header border
+.nav-header {
+  border-bottom-color: rgba(196, 160, 82, 0.2) !important;
+}
+
+// Card hover effects
+.card:hover {
+  border-color: rgba(196, 160, 82, 0.3) !important;
+}
+
+// Table row hover
+.table .row:hover {
+  background-color: rgba(196, 160, 82, 0.05) !important;
+}
+
+// Focus states
+input:focus,
+textarea:focus,
+select:focus,
+.rich-text:focus-within {
+  border-color: #c4a052 !important;
+  box-shadow: 0 0 0 2px rgba(196, 160, 82, 0.2) !important;
+}
+
+// Checkbox/toggle checked state
+.checkbox-input:checked + .checkbox-input__button {
+  background-color: #c4a052 !important;
+}
+
+// Pills/tags
+.pill {
+  background-color: rgba(196, 160, 82, 0.15) !important;
+  color: #c4a052 !important;
+}
+
+// Collection list items hover
+.list__item:hover {
+  background-color: rgba(196, 160, 82, 0.05) !important;
+}
+
+// Stepnav breadcrumbs
+.step-nav a:hover {
+  color: #c4a052 !important;
+}
+
+// Dashboard cards
+.dashboard__card-list .card {
+  transition: all 0.2s ease;
+}
+
+.dashboard__card-list .card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+// Custom scrollbar for dark theme
+[data-theme="dark"] {
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #0d1b2a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: #344a5f;
+    border-radius: 4px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: #4a6277;
+  }
+}
+
+// Loading bar
+.payload__loading-bar {
+  background-color: #c4a052 !important;
+}
+
+// Links
+a:hover {
+  color: #c4a052;
+}
+
+// Selected/active items
+.nav__link--active::before {
+  background-color: #c4a052 !important;
+}
+
+// Group labels
+.nav__group-label {
+  color: #c4a052 !important;
+}
+
+// Toggler active
+.toggler--active {
+  background-color: #c4a052 !important;
+}
+
+// Save button
+.form-submit .btn--style-primary {
+  background: linear-gradient(135deg, #c4a052 0%, #d4b062 100%) !important;
+}
+
+// Preview button styling
+.preview-btn {
+  border-color: #c4a052 !important;
+  color: #c4a052 !important;
+}
+
+.preview-btn:hover {
+  background-color: rgba(196, 160, 82, 0.1) !important;
+}
