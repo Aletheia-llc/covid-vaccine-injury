@@ -12,6 +12,7 @@ import { Resources } from './collections/Resources'
 import { FormSubmissions } from './collections/FormSubmissions'
 import { SurveyResponses } from './collections/SurveyResponses'
 import { Subscribers } from './collections/Subscribers'
+import { LegalPages } from './collections/LegalPages'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -40,7 +41,7 @@ export default buildConfig({
       beforeDashboard: ['/components/SurveyDashboard'],
     },
   },
-  collections: [Users, FAQs, Statistics, Resources, FormSubmissions, SurveyResponses, Subscribers],
+  collections: [Users, FAQs, Statistics, Resources, FormSubmissions, SurveyResponses, Subscribers, LegalPages],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
