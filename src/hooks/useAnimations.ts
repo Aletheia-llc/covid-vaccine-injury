@@ -244,34 +244,15 @@ export function useScrollAnimations() {
       });
     }
 
-    // Fund tank animation
+    // Fund tank animation - CSS class based for smooth transition
     const fundTank = document.querySelector('.fund-tank');
     if (fundTank) {
       const observer = new IntersectionObserver(
         (entries) => {
           entries.forEach((entry) => {
             if (entry.isIntersecting) {
-              const burden = entry.target.querySelector('.fund-burden') as HTMLElement;
-              const available = entry.target.querySelector('.fund-available') as HTMLElement;
-
-              if (burden) {
-                const targetHeight = burden.style.height || '38%';
-                burden.dataset.targetHeight = targetHeight;
-                burden.style.height = '0%';
-                burden.style.transition = 'height 1s ease-out';
-                setTimeout(() => {
-                  burden.style.height = targetHeight;
-                }, 200);
-              }
-
-              if (available) {
-                available.style.opacity = '0';
-                available.style.transition = 'opacity 0.8s ease-out';
-                setTimeout(() => {
-                  available.style.opacity = '1';
-                }, 600);
-              }
-
+              // Simply add animated class - CSS handles the transition
+              entry.target.classList.add('animated');
               observer.unobserve(entry.target);
             }
           });

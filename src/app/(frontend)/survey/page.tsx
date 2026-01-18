@@ -72,7 +72,15 @@ export default function SurveyPage() {
           const nextStepNum = Math.min(step + 1, 4)
           track('survey_step', { step: nextStepNum })
           setStep(nextStepNum)
-          window.scrollTo({ top: 0, behavior: 'smooth' })
+          // Small delay before scroll to let new content render
+          setTimeout(() => {
+            const surveyForm = document.querySelector('.survey-form')
+            if (surveyForm) {
+              const navHeight = 80
+              const top = surveyForm.getBoundingClientRect().top + window.scrollY - navHeight
+              window.scrollTo({ top, behavior: 'smooth' })
+            }
+          }, 50)
         }
       }, 400) // Small delay to show selection animation
 
@@ -124,16 +132,25 @@ export default function SurveyPage() {
     })
   }
 
+  const scrollToSurveyForm = () => {
+    const surveyForm = document.querySelector('.survey-form')
+    if (surveyForm) {
+      const navHeight = 80
+      const top = surveyForm.getBoundingClientRect().top + window.scrollY - navHeight
+      window.scrollTo({ top, behavior: 'smooth' })
+    }
+  }
+
   const nextStep = () => {
     const nextStepNum = Math.min(step + 1, 4)
     track('survey_step', { step: nextStepNum })
     setStep(nextStepNum)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    scrollToSurveyForm()
   }
 
   const prevStep = () => {
     setStep(prev => Math.max(prev - 1, 1))
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    scrollToSurveyForm()
   }
 
   const handleSubmit = async () => {
