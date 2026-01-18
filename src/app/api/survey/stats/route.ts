@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
+import { isAdminAuthenticated, unauthorizedResponse } from '@/lib/auth'
 
 export async function GET() {
+  // Require admin authentication
+  const isAuthed = await isAdminAuthenticated()
+  if (!isAuthed) {
+    return unauthorizedResponse()
+  }
+
   try {
     const payload = await getPayload({ config })
 

@@ -708,7 +708,7 @@ section {
 }
 
 .outlier-segment.single {
-  background: linear-gradient(135deg, var(--alert-red) 0%, var(--alert-red-light) 100%);
+  background: linear-gradient(135deg, var(--danger) 0%, var(--danger-light) 100%);
   flex-direction: column;
 }
 
@@ -757,7 +757,7 @@ section {
   margin-top: 4px;
 }
 
-.legend-dot.gold { background: var(--alert-red); }
+.legend-dot.gold { background: var(--danger); }
 .legend-dot.navy { background: var(--slate-gray); }
 
 .legend-info h5 {
@@ -903,7 +903,7 @@ section {
 }
 
 .median-bar-fill.cicp.animated {
-  width: 8%;
+  width: 0.92%;
 }
 
 .median-bar-fill.vicp.animated {
@@ -4805,5 +4805,101 @@ section {
   .hero-inner {
     opacity: 1 !important;
     transform: none !important;
+  }
+}
+
+/* ========================================
+   MODAL OVERLAY
+   ======================================== */
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.8);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  padding: 24px;
+  animation: modalFadeIn 0.3s ease;
+}
+
+@keyframes modalFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  position: relative;
+  max-height: 90vh;
+  overflow-y: auto;
+  animation: modalSlideIn 0.3s ease;
+}
+
+@keyframes modalSlideIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  z-index: 10;
+}
+
+.modal-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.1);
+}
+
+/* Nav link button styling */
+.nav-link-btn {
+  background: none;
+  border: none;
+  color: var(--text-light);
+  font-family: inherit;
+  font-size: inherit;
+  cursor: pointer;
+  padding: 0;
+  transition: color 0.2s ease;
+}
+
+.nav-link-btn:hover {
+  color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .nav-link-btn {
+    display: block;
+    width: 100%;
+    text-align: left;
+    padding: 12px 0;
+    font-size: 16px;
+    color: var(--text);
+    border-bottom: 1px solid var(--border);
   }
 }

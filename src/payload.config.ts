@@ -17,6 +17,15 @@ import { LegalPages } from './collections/LegalPages'
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
+// Validate required environment variables
+const getRequiredEnvVar = (name: string): string => {
+  const value = process.env[name]
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`)
+  }
+  return value
+}
+
 export default buildConfig({
   admin: {
     user: Users.slug,
@@ -43,13 +52,13 @@ export default buildConfig({
   },
   collections: [Users, FAQs, Statistics, Resources, FormSubmissions, SurveyResponses, Subscribers, LegalPages],
   editor: lexicalEditor(),
-  secret: process.env.PAYLOAD_SECRET || '',
+  secret: getRequiredEnvVar('PAYLOAD_SECRET'),
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: postgresAdapter({
     pool: {
-      connectionString: process.env.DATABASE_URL || '',
+      connectionString: getRequiredEnvVar('DATABASE_URL'),
     },
   }),
   sharp,

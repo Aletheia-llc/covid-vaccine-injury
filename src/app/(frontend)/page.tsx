@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { track } from '@vercel/analytics'
 import { useSiteAnimations } from '@/hooks/useAnimations'
+import CICPRoulette from './components/CICPRoulette'
 
 export default function HomePage() {
   // Initialize site animations (hero, scroll, funnel interactions)
@@ -34,6 +35,7 @@ export default function HomePage() {
   const [subscribeMessage, setSubscribeMessage] = useState({ type: '', text: '' })
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const [calcTracked, setCalcTracked] = useState({ main: false, personal: false })
+  const [rouletteOpen, setRouletteOpen] = useState(false)
   const heroRef = useRef<HTMLElement>(null)
 
   // Scroll progress
@@ -221,6 +223,7 @@ export default function HomePage() {
             <li><Link href="/faq" onClick={() => setMobileNavOpen(false)}>FAQ</Link></li>
             <li><Link href="/resources" onClick={() => setMobileNavOpen(false)}>Data</Link></li>
             <li><Link href="/survey" onClick={() => setMobileNavOpen(false)}>Survey</Link></li>
+            <li><button className="nav-link-btn" onClick={() => { setMobileNavOpen(false); setRouletteOpen(true); track('roulette_opened', { location: 'nav' }) }}>🎰 Roulette</button></li>
             <li className="mobile-only">
               <a href="#action" className="nav-cta mobile" onClick={() => { setMobileNavOpen(false); track('cta_clicked', { location: 'nav_mobile', type: 'contact_congress' }) }}>Contact Congress</a>
             </li>
@@ -1012,6 +1015,18 @@ export default function HomePage() {
           <Link href="/terms">Terms of Service</Link>
         </div>
       </footer>
+
+      {/* CICP Roulette Modal */}
+      {rouletteOpen && (
+        <div className="modal-overlay" onClick={() => setRouletteOpen(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <button className="modal-close" onClick={() => setRouletteOpen(false)} aria-label="Close modal">
+              ✕
+            </button>
+            <CICPRoulette />
+          </div>
+        </div>
+      )}
     </div>
   )
 }

@@ -2,10 +2,17 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextResponse } from 'next/server'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
+import { validateOrigin, csrfErrorResponse } from '@/lib/csrf'
+import { sanitizeName, sanitizeEmail, sanitizeComment } from '@/lib/sanitize'
 
 type SubjectType = 'general' | 'story' | 'media' | 'legislative' | 'other'
 
 export async function POST(request: Request) {
+  // CSRF protection: validate request origin
+  if (!validateOrigin(request)) {
+    return csrfErrorResponse()
+  }
+
   try {
     // Rate limiting: 5 contact submissions per hour per IP
     const clientIP = getClientIP(request)
@@ -20,13 +27,29 @@ export async function POST(request: Request) {
 
     const formData = await request.formData()
 
-    const name = formData.get('name') as string
-    const email = formData.get('email') as string
+    const rawName = formData.get('name') as string
+    const rawEmail = formData.get('email') as string
     const subject = formData.get('subject') as SubjectType
-    const message = formData.get('message') as string
+    const rawMessage = formData.get('message') as string
 
-    if (!name || !email || !subject || !message) {
+    if (!rawName || !rawEmail || !subject || !rawMessage) {
       return NextResponse.redirect(new URL('/?error=missing-fields', request.url))
+    }
+
+    // Sanitize user input
+    const name = sanitizeName(rawName)
+    const email = sanitizeEmail(rawEmail)
+    const message = sanitizeComment(rawMessage)
+
+    // Validate sanitized values
+    if (!name || !email || !message) {
+      return NextResponse.redirect(new URL('/?error=invalid-input', request.url))
+    }
+
+    // Validate subject is one of allowed values
+    const validSubjects: SubjectType[] = ['general', 'story', 'media', 'legislative', 'other']
+    if (!validSubjects.includes(subject)) {
+      return NextResponse.redirect(new URL('/?error=invalid-input', request.url))
     }
 
     const payload = await getPayload({ config })
