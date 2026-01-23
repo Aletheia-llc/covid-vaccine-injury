@@ -22,7 +22,9 @@ test.describe('Smoke Tests', () => {
     expect(response.status()).toBe(200)
 
     const body = await response.json()
-    expect(body.status).toBe('healthy')
+    // Accept "healthy" or "degraded" - degraded is expected in CI where
+    // optional services (Stripe, reCAPTCHA, Sentry) aren't configured
+    expect(['healthy', 'degraded']).toContain(body.status)
   })
 
   test('CSRF endpoint returns token', async ({ request }) => {
