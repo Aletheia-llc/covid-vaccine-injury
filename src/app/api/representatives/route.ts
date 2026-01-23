@@ -107,7 +107,7 @@ function findContactForm(legislators: Legislator[], name: string, state: string)
 export async function GET(request: NextRequest) {
   // Rate limiting: 30 lookups per hour per IP
   const clientIP = getClientIP(request)
-  const rateLimit = checkRateLimit(`reps:${clientIP}`, {
+  const rateLimit = await checkRateLimit(`reps:${clientIP}`, {
     windowMs: 60 * 60 * 1000, // 1 hour
     maxRequests: 30
   })

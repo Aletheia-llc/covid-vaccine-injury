@@ -1,26 +1,26 @@
-// Simple in-memory rate limiter for API endpoints
-// For production with multiple instances, consider using Redis
+/**
+ * Rate Limiting Module
+ *
+ * Provides rate limiting for API endpoints with multiple backend options:
+ * 1. Upstash Redis (recommended for production on Vercel)
+ * 2. In-memory fallback (for local development only)
+ *
+ * Usage:
+ *   const result = await checkRateLimit(ip, { windowMs: 3600000, maxRequests: 5 })
+ *   if (!result.success) {
+ *     return new Response('Too many requests', { status: 429 })
+ *   }
+ */
 
-interface RateLimitEntry {
-  count: number
-  resetTime: number
-}
+import { log } from './logger'
 
-const rateLimitMap = new Map<string, RateLimitEntry>()
-
-// Clean up old entries every 5 minutes
-setInterval(() => {
-  const now = Date.now()
-  for (const [key, entry] of rateLimitMap.entries()) {
-    if (now > entry.resetTime) {
-      rateLimitMap.delete(key)
-    }
-  }
-}, 5 * 60 * 1000)
+// ============================================================================
+// Types
+// ============================================================================
 
 export interface RateLimitConfig {
-  windowMs: number  // Time window in milliseconds
-  maxRequests: number  // Max requests per window
+  windowMs: number // Time window in milliseconds
+  maxRequests: number // Max requests per window
 }
 
 export interface RateLimitResult {
@@ -29,17 +29,38 @@ export interface RateLimitResult {
   resetTime: number
 }
 
-export function checkRateLimit(
-  identifier: string,
-  config: RateLimitConfig = { windowMs: 60000, maxRequests: 10 }
-): RateLimitResult {
+interface RateLimitEntry {
+  count: number
+  resetTime: number
+}
+
+// ============================================================================
+// In-Memory Fallback (for development only)
+// ============================================================================
+
+const memoryStore = new Map<string, RateLimitEntry>()
+
+// Clean up old entries every 5 minutes
+if (typeof setInterval !== 'undefined') {
+  setInterval(
+    () => {
+      const now = Date.now()
+      for (const [key, entry] of memoryStore.entries()) {
+        if (now > entry.resetTime) {
+          memoryStore.delete(key)
+        }
+      }
+    },
+    5 * 60 * 1000
+  )
+}
+
+function checkMemoryRateLimit(identifier: string, config: RateLimitConfig): RateLimitResult {
   const now = Date.now()
-  const key = identifier
-  const entry = rateLimitMap.get(key)
+  const entry = memoryStore.get(identifier)
 
   if (!entry || now > entry.resetTime) {
-    // First request or window expired
-    rateLimitMap.set(key, {
+    memoryStore.set(identifier, {
       count: 1,
       resetTime: now + config.windowMs,
     })
@@ -51,7 +72,6 @@ export function checkRateLimit(
   }
 
   if (entry.count >= config.maxRequests) {
-    // Rate limit exceeded
     return {
       success: false,
       remaining: 0,
@@ -59,7 +79,6 @@ export function checkRateLimit(
     }
   }
 
-  // Increment counter
   entry.count++
   return {
     success: true,
@@ -67,6 +86,130 @@ export function checkRateLimit(
     resetTime: entry.resetTime,
   }
 }
+
+// ============================================================================
+// Upstash Redis Implementation
+// ============================================================================
+
+async function checkUpstashRateLimit(
+  identifier: string,
+  config: RateLimitConfig
+): Promise<RateLimitResult | null> {
+  const upstashUrl = process.env.UPSTASH_REDIS_REST_URL
+  const upstashToken = process.env.UPSTASH_REDIS_REST_TOKEN
+
+  if (!upstashUrl || !upstashToken) {
+    return null // Not configured
+  }
+
+  try {
+    const key = `rate_limit:${identifier}`
+    const windowSeconds = Math.ceil(config.windowMs / 1000)
+
+    // Use Upstash REST API to increment and set expiry atomically
+    // INCR + EXPIRE pattern
+    const incrResponse = await fetch(`${upstashUrl}/incr/${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${upstashToken}`,
+      },
+    })
+
+    if (!incrResponse.ok) {
+      throw new Error(`Upstash INCR failed: ${incrResponse.status}`)
+    }
+
+    const incrData = (await incrResponse.json()) as { result: number }
+    const count = incrData.result
+
+    // Set expiry if this is a new key (count === 1)
+    if (count === 1) {
+      await fetch(`${upstashUrl}/expire/${encodeURIComponent(key)}/${windowSeconds}`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${upstashToken}`,
+        },
+      })
+    }
+
+    // Get TTL for reset time
+    const ttlResponse = await fetch(`${upstashUrl}/ttl/${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${upstashToken}`,
+      },
+    })
+
+    let resetTime = Date.now() + config.windowMs
+    if (ttlResponse.ok) {
+      const ttlData = (await ttlResponse.json()) as { result: number }
+      if (ttlData.result > 0) {
+        resetTime = Date.now() + ttlData.result * 1000
+      }
+    }
+
+    const remaining = Math.max(0, config.maxRequests - count)
+    const success = count <= config.maxRequests
+
+    return {
+      success,
+      remaining,
+      resetTime,
+    }
+  } catch (error) {
+    log.error('upstash_rate_limit_error', {
+      error: error instanceof Error ? error.message : 'Unknown error',
+    })
+    return null // Fall back to memory
+  }
+}
+
+// ============================================================================
+// Main Rate Limit Function
+// ============================================================================
+
+/**
+ * Check rate limit for an identifier (usually IP address).
+ * Uses Upstash Redis if configured, otherwise falls back to in-memory.
+ *
+ * @param identifier - Unique identifier for the client (IP, user ID, etc.)
+ * @param config - Rate limit configuration
+ * @returns Rate limit result with success status, remaining requests, and reset time
+ */
+export async function checkRateLimit(
+  identifier: string,
+  config: RateLimitConfig = { windowMs: 60000, maxRequests: 10 }
+): Promise<RateLimitResult> {
+  // Try Upstash first (production)
+  const upstashResult = await checkUpstashRateLimit(identifier, config)
+  if (upstashResult) {
+    return upstashResult
+  }
+
+  // Fall back to memory (development)
+  if (process.env.NODE_ENV === 'development') {
+    log.info('rate_limit_fallback', {
+      message: 'Using in-memory rate limiting (development only)',
+    })
+  }
+  return checkMemoryRateLimit(identifier, config)
+}
+
+/**
+ * Synchronous rate limit check - uses memory only.
+ * Use this only when async is not possible.
+ * @deprecated Use checkRateLimit() instead for production safety
+ */
+export function checkRateLimitSync(
+  identifier: string,
+  config: RateLimitConfig = { windowMs: 60000, maxRequests: 10 }
+): RateLimitResult {
+  return checkMemoryRateLimit(identifier, config)
+}
+
+// ============================================================================
+// IP Extraction Utilities
+// ============================================================================
 
 /**
  * Validates that a string looks like a valid IP address (IPv4 or IPv6)
@@ -78,9 +221,8 @@ function isValidIP(ip: string): boolean {
   const ipv6Pattern = /^([0-9a-fA-F]{0,4}:){2,7}[0-9a-fA-F]{0,4}$/
 
   if (ipv4Pattern.test(ip)) {
-    // Validate each octet is 0-255
     const parts = ip.split('.')
-    return parts.every(part => {
+    return parts.every((part) => {
       const num = parseInt(part, 10)
       return num >= 0 && num <= 255
     })
@@ -89,6 +231,26 @@ function isValidIP(ip: string): boolean {
   return ipv6Pattern.test(ip)
 }
 
+/**
+ * Simple string hash for fallback identification
+ */
+function hashString(str: string): string {
+  let hash = 0
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i)
+    hash = (hash << 5) - hash + char
+    hash = hash & hash
+  }
+  return Math.abs(hash).toString(16).substring(0, 8)
+}
+
+/**
+ * Extract client IP from request headers.
+ * Prioritizes trusted headers set by infrastructure over client-provided ones.
+ *
+ * @param request - The incoming request
+ * @returns Client IP address or hashed fallback identifier
+ */
 export function getClientIP(request: Request): string {
   // On Vercel, use the trusted x-vercel-forwarded-for header first
   // This header is set by Vercel's edge network and cannot be spoofed
@@ -110,14 +272,11 @@ export function getClientIP(request: Request): string {
   // most likely added by our trusted infrastructure
   const forwarded = request.headers.get('x-forwarded-for')
   if (forwarded) {
-    const ips = forwarded.split(',').map(ip => ip.trim())
-    // Use the last IP in the chain (closest to our server)
-    // Note: This assumes our infrastructure adds to the end
+    const ips = forwarded.split(',').map((ip) => ip.trim())
     const lastIp = ips[ips.length - 1]
     if (isValidIP(lastIp)) {
       return lastIp
     }
-    // Fallback to first IP if last is invalid
     const firstIp = ips[0]
     if (isValidIP(firstIp)) {
       return firstIp
@@ -125,21 +284,7 @@ export function getClientIP(request: Request): string {
   }
 
   // Fallback - use a hash of user agent + accept headers for some uniqueness
-  // This isn't perfect but provides some protection against unknown IPs
   const userAgent = request.headers.get('user-agent') || ''
   const accept = request.headers.get('accept') || ''
   return `unknown-${hashString(userAgent + accept)}`
-}
-
-/**
- * Simple string hash for fallback identification
- */
-function hashString(str: string): string {
-  let hash = 0
-  for (let i = 0; i < str.length; i++) {
-    const char = str.charCodeAt(i)
-    hash = ((hash << 5) - hash) + char
-    hash = hash & hash // Convert to 32bit integer
-  }
-  return Math.abs(hash).toString(16).substring(0, 8)
 }

@@ -17,7 +17,7 @@ export async function POST(request: Request) {
   try {
     // Rate limiting: 5 contact submissions per hour per IP
     const clientIP = getClientIP(request)
-    const rateLimit = checkRateLimit(`contact:${clientIP}`, {
+    const rateLimit = await checkRateLimit(`contact:${clientIP}`, {
       windowMs: 60 * 60 * 1000, // 1 hour
       maxRequests: 5
     })

@@ -2,6 +2,30 @@ import { NextRequest } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { headers, cookies } from 'next/headers'
+import { timingSafeEqual } from 'crypto'
+
+/**
+ * Timing-safe string comparison to prevent timing attacks.
+ * Returns true if both strings are equal, false otherwise.
+ */
+function safeCompare(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a, 'utf8')
+    const bufB = Buffer.from(b, 'utf8')
+
+    // If lengths differ, we still need to do a comparison to avoid timing leaks
+    // but we know the result will be false
+    if (bufA.length !== bufB.length) {
+      // Compare against itself to maintain constant time
+      timingSafeEqual(bufA, bufA)
+      return false
+    }
+
+    return timingSafeEqual(bufA, bufB)
+  } catch {
+    return false
+  }
+}
 
 /**
  * Check if the request is from an authenticated admin user.
@@ -10,12 +34,12 @@ import { headers, cookies } from 'next/headers'
  * 2. API key header (for external API access)
  */
 export async function isAdminAuthenticated(request?: NextRequest): Promise<boolean> {
-  // Method 1: Check API key header
+  // Method 1: Check API key header (using timing-safe comparison)
   const apiKey = process.env.ADMIN_API_KEY
   if (apiKey) {
     const headersList = request ? request.headers : await headers()
     const providedKey = headersList.get('x-api-key')
-    if (providedKey && providedKey === apiKey) {
+    if (providedKey && safeCompare(providedKey, apiKey)) {
       return true
     }
   }

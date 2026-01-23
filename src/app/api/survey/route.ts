@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting: 5 survey submissions per hour per IP
     const clientIP = getClientIP(request)
-    const rateLimit = checkRateLimit(`survey:${clientIP}`, {
+    const rateLimit = await checkRateLimit(`survey:${clientIP}`, {
       windowMs: 60 * 60 * 1000, // 1 hour
       maxRequests: 5
     })

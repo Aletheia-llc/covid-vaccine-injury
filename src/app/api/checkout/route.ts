@@ -15,7 +15,7 @@ export async function POST(request: Request) {
     const ip = getClientIP(request)
 
     // Check rate limit (10 checkout attempts per minute)
-    const rateCheck = checkRateLimit(ip, { maxRequests: 10, windowMs: 60000 })
+    const rateCheck = await checkRateLimit(ip, { maxRequests: 10, windowMs: 60000 })
     if (!rateCheck.success) {
       log.security('checkout_rate_limited', { ipPrefix: ip.substring(0, 8) })
       return NextResponse.json(

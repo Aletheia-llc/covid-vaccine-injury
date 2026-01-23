@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
   try {
     // Rate limiting: 10 subscription attempts per hour per IP
     const clientIP = getClientIP(request)
-    const rateLimit = checkRateLimit(`subscribe:${clientIP}`, {
+    const rateLimit = await checkRateLimit(`subscribe:${clientIP}`, {
       windowMs: 60 * 60 * 1000, // 1 hour
       maxRequests: 10
     })
