@@ -69,7 +69,7 @@ GET /api/csrf
 
 ```json
 {
-  "token": "1705312200000.a1b2c3d4e5f6..."
+  "csrfToken": "1705312200000.a1b2c3d4e5f6..."
 }
 ```
 
@@ -79,13 +79,13 @@ Include the token in form submissions:
 
 ```javascript
 const csrfResponse = await fetch('/api/csrf')
-const { token } = await csrfResponse.json()
+const { csrfToken } = await csrfResponse.json()
 
 await fetch('/api/survey', {
   method: 'POST',
   headers: {
     'Content-Type': 'application/json',
-    'x-csrf-token': token
+    'x-csrf-token': csrfToken
   },
   body: JSON.stringify(data)
 })
@@ -253,7 +253,7 @@ POST /api/contact
 
 **Rate Limit**: 5 requests per hour per IP
 
-**Content-Type**: `application/x-www-form-urlencoded` or `multipart/form-data`
+**Content-Type**: `application/json` or `application/x-www-form-urlencoded`
 
 **Request Body**
 
@@ -266,9 +266,22 @@ POST /api/contact
 
 **Response**
 
-Redirects to homepage with success/error query parameter:
-- Success: `/?success=contact`
-- Error: `/?error=missing-fields` or `/?error=rate-limited`
+```json
+{
+  "success": true,
+  "message": "Your message has been sent."
+}
+```
+
+**Error Responses**
+
+| Code | Error | Description |
+|------|-------|-------------|
+| 400 | Missing required fields | name, email, subject, or message not provided |
+| 400 | Invalid input | Input failed sanitization |
+| 403 | CSRF error | Invalid or missing origin |
+| 429 | Rate limited | Too many submissions |
+| 500 | Server error | Unable to send message |
 
 ---
 

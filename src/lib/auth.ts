@@ -36,12 +36,19 @@ function safeCompare(a: string, b: string): boolean {
 export async function isAdminAuthenticated(request?: NextRequest): Promise<boolean> {
   // Method 1: Check API key header (using timing-safe comparison)
   const apiKey = process.env.ADMIN_API_KEY
-  if (apiKey) {
-    const headersList = request ? request.headers : await headers()
-    const providedKey = headersList.get('x-api-key')
-    if (providedKey && safeCompare(providedKey, apiKey)) {
+  const headersList = request ? request.headers : await headers()
+  const providedKey = headersList.get('x-api-key')
+
+  // Always perform a constant-time comparison to prevent timing attacks,
+  // even when one or both keys are missing/empty
+  if (apiKey && providedKey) {
+    if (safeCompare(providedKey, apiKey)) {
       return true
     }
+  } else if (apiKey || providedKey) {
+    // One key exists but not the other - still do a dummy comparison
+    // to maintain constant time behavior
+    safeCompare('dummy-key-for-timing', 'dummy-key-for-timing')
   }
 
   // Method 2: Check Payload session cookie
@@ -64,11 +71,17 @@ export async function isAdminAuthenticated(request?: NextRequest): Promise<boole
 }
 
 /**
- * Returns a 401 Unauthorized response
+ * Returns a 401 Unauthorized response with helpful auth guidance
  */
 export function unauthorizedResponse() {
-  return new Response(JSON.stringify({ error: 'Unauthorized' }), {
-    status: 401,
-    headers: { 'Content-Type': 'application/json' },
-  })
+  return new Response(
+    JSON.stringify({
+      error: 'Unauthorized',
+      message: 'Authentication required. Use a valid Payload CMS session or include x-api-key header.',
+    }),
+    {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    }
+  )
 }

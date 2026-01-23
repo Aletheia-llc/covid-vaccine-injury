@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { isAdminAuthenticated, unauthorizedResponse } from '@/lib/auth'
+import { log } from '@/lib/logger'
 
 export async function GET() {
   // Require admin authentication
@@ -46,15 +47,18 @@ export async function GET() {
       no: docs.filter((d) => d.q8 === 'no').length,
     }
 
-    // Top reforms (q9)
+    // Top reforms (q9) - with proper type narrowing
     const reformCounts: Record<string, number> = {}
-    docs.forEach((d) => {
-      if (d.q9 && Array.isArray(d.q9)) {
-        d.q9.forEach((reform: string) => {
-          reformCounts[reform] = (reformCounts[reform] || 0) + 1
-        })
+    for (const d of docs) {
+      const q9Value = d.q9
+      if (q9Value && Array.isArray(q9Value)) {
+        for (const reform of q9Value) {
+          if (typeof reform === 'string') {
+            reformCounts[reform] = (reformCounts[reform] || 0) + 1
+          }
+        }
       }
-    })
+    }
 
     const topReforms = Object.entries(reformCounts)
       .map(([reform, count]) => ({ reform, count }))
@@ -81,7 +85,7 @@ export async function GET() {
       recentSubmissions,
     })
   } catch (error) {
-    console.error('Error fetching survey stats:', error)
+    log.error('survey_stats_error', { error })
     return NextResponse.json({ error: 'Failed to fetch stats' }, { status: 500 })
   }
 }

@@ -23,18 +23,42 @@ export async function POST(request: Request) {
     })
 
     if (!rateLimit.success) {
-      return NextResponse.redirect(new URL('/?error=rate-limited', request.url))
+      const retryAfterSeconds = Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
+      return NextResponse.json(
+        { error: 'Too many submissions. Please try again later.' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(Math.max(1, retryAfterSeconds)) }
+        }
+      )
     }
 
-    const formData = await request.formData()
+    // Support both JSON and FormData for flexibility
+    const contentType = request.headers.get('content-type') || ''
+    let rawName: string
+    let rawEmail: string
+    let subject: SubjectType
+    let rawMessage: string
 
-    const rawName = formData.get('name') as string
-    const rawEmail = formData.get('email') as string
-    const subject = formData.get('subject') as SubjectType
-    const rawMessage = formData.get('message') as string
+    if (contentType.includes('application/json')) {
+      const body = await request.json()
+      rawName = body.name
+      rawEmail = body.email
+      subject = body.subject
+      rawMessage = body.message
+    } else {
+      const formData = await request.formData()
+      rawName = formData.get('name') as string
+      rawEmail = formData.get('email') as string
+      subject = formData.get('subject') as SubjectType
+      rawMessage = formData.get('message') as string
+    }
 
     if (!rawName || !rawEmail || !subject || !rawMessage) {
-      return NextResponse.redirect(new URL('/?error=missing-fields', request.url))
+      return NextResponse.json(
+        { error: 'Missing required fields: name, email, subject, and message are required.' },
+        { status: 400 }
+      )
     }
 
     // Sanitize user input
@@ -44,13 +68,19 @@ export async function POST(request: Request) {
 
     // Validate sanitized values
     if (!name || !email || !message) {
-      return NextResponse.redirect(new URL('/?error=invalid-input', request.url))
+      return NextResponse.json(
+        { error: 'Invalid input. Please check your name, email, and message.' },
+        { status: 400 }
+      )
     }
 
     // Validate subject is one of allowed values
     const validSubjects: SubjectType[] = ['general', 'story', 'media', 'legislative', 'other']
     if (!validSubjects.includes(subject)) {
-      return NextResponse.redirect(new URL('/?error=invalid-input', request.url))
+      return NextResponse.json(
+        { error: 'Invalid subject type.' },
+        { status: 400 }
+      )
     }
 
     const payload = await getPayload({ config })
@@ -66,9 +96,12 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.redirect(new URL('/?success=true', request.url))
+    return NextResponse.json({ success: true, message: 'Your message has been sent.' })
   } catch (error) {
     log.failure('contact_form_submission', error)
-    return NextResponse.redirect(new URL('/?error=server-error', request.url))
+    return NextResponse.json(
+      { error: 'Unable to send message. Please try again later.' },
+      { status: 500 }
+    )
   }
 }

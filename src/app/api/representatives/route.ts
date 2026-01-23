@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import yaml from 'js-yaml'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
+import { log } from '@/lib/logger'
 
 interface WIMRResult {
   name: string
@@ -61,7 +62,7 @@ async function getLegislatorsData(): Promise<Legislator[]> {
     )
 
     if (!response.ok) {
-      console.error('Failed to fetch legislators data')
+      log.error('legislators_fetch_failed', { status: response.status })
       return []
     }
 
@@ -73,7 +74,7 @@ async function getLegislatorsData(): Promise<Legislator[]> {
 
     return data
   } catch (error) {
-    console.error('Error fetching legislators data:', error)
+    log.error('legislators_fetch_error', { error })
     return []
   }
 }
@@ -113,9 +114,13 @@ export async function GET(request: NextRequest) {
   })
 
   if (!rateLimit.success) {
+    const retryAfterSeconds = Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
     return NextResponse.json(
       { error: 'Too many requests. Please try again later.' },
-      { status: 429 }
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.max(1, retryAfterSeconds)) }
+      }
     )
   }
 
@@ -214,7 +219,7 @@ export async function GET(request: NextRequest) {
       source: 'whoismyrepresentative.com + unitedstates/congress-legislators'
     })
   } catch (error) {
-    console.error('Representative lookup error:', error)
+    log.error('representative_lookup_error', { error })
     return NextResponse.json(
       { error: 'Unable to look up representatives. Please try the official directories below.' },
       { status: 500 }

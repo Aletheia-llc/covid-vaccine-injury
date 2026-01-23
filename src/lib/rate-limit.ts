@@ -168,17 +168,41 @@ async function checkUpstashRateLimit(
 // Main Rate Limit Function
 // ============================================================================
 
+// Default rate limit: 10 requests per minute
+// This is a conservative default for unlabeled/generic endpoints.
+// Individual endpoints should specify their own limits based on expected usage:
+// - Forms (survey, contact, subscribe): 5-10 per hour
+// - Lookups (representatives): 30 per hour
+// - Checkout: 10 per minute
+// - Health checks: 100 per minute
+// - CSRF tokens: 30 per minute
+const DEFAULT_RATE_LIMIT: RateLimitConfig = {
+  windowMs: 60000,   // 1 minute
+  maxRequests: 10,   // 10 requests
+}
+
 /**
  * Check rate limit for an identifier (usually IP address).
  * Uses Upstash Redis if configured, otherwise falls back to in-memory.
  *
  * @param identifier - Unique identifier for the client (IP, user ID, etc.)
- * @param config - Rate limit configuration
+ * @param config - Rate limit configuration (default: 10 requests per minute)
  * @returns Rate limit result with success status, remaining requests, and reset time
+ *
+ * @example
+ * // Use default rate limit (10 req/min)
+ * const result = await checkRateLimit(clientIP)
+ *
+ * @example
+ * // Custom rate limit for forms (5 req/hour)
+ * const result = await checkRateLimit(`form:${clientIP}`, {
+ *   windowMs: 60 * 60 * 1000,
+ *   maxRequests: 5
+ * })
  */
 export async function checkRateLimit(
   identifier: string,
-  config: RateLimitConfig = { windowMs: 60000, maxRequests: 10 }
+  config: RateLimitConfig = DEFAULT_RATE_LIMIT
 ): Promise<RateLimitResult> {
   // Try Upstash first (production)
   const upstashResult = await checkUpstashRateLimit(identifier, config)
@@ -186,10 +210,17 @@ export async function checkRateLimit(
     return upstashResult
   }
 
-  // Fall back to memory (development)
+  // Fall back to memory - log appropriately based on environment
   if (process.env.NODE_ENV === 'development') {
     log.info('rate_limit_fallback', {
       message: 'Using in-memory rate limiting (development only)',
+    })
+  } else {
+    // In production, this is a warning - rate limiting may not work correctly
+    // across serverless function instances
+    log.warn('rate_limit_upstash_unavailable', {
+      message: 'Upstash not configured or unavailable, falling back to in-memory rate limiting. This may not work correctly in production.',
+      identifier: identifier.substring(0, 20),
     })
   }
   return checkMemoryRateLimit(identifier, config)
@@ -283,8 +314,23 @@ export function getClientIP(request: Request): string {
     }
   }
 
-  // Fallback - use a hash of user agent + accept headers for some uniqueness
+  // Fallback - use a hash of multiple headers for better uniqueness
+  // Include: user-agent, accept, accept-language, accept-encoding, and a timestamp component
+  // This is still not as good as a real IP but provides more variation than user-agent alone
   const userAgent = request.headers.get('user-agent') || ''
   const accept = request.headers.get('accept') || ''
-  return `unknown-${hashString(userAgent + accept)}`
+  const acceptLang = request.headers.get('accept-language') || ''
+  const acceptEnc = request.headers.get('accept-encoding') || ''
+  const secChUa = request.headers.get('sec-ch-ua') || '' // Client hints (browser-specific)
+  const secChUaPlatform = request.headers.get('sec-ch-ua-platform') || ''
+
+  // Combine multiple headers for a more unique fingerprint
+  const fingerprint = `${userAgent}|${accept}|${acceptLang}|${acceptEnc}|${secChUa}|${secChUaPlatform}`
+
+  log.warn('rate_limit_ip_fallback', {
+    message: 'Could not determine client IP, using header fingerprint',
+    fingerprintHash: hashString(fingerprint),
+  })
+
+  return `unknown-${hashString(fingerprint)}`
 }

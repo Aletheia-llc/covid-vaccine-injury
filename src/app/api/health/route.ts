@@ -1,12 +1,11 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 
 interface HealthCheck {
   status: 'healthy' | 'degraded' | 'unhealthy'
   checks: {
-    [key: string]: {
-      status: 'pass' | 'fail' | 'warn'
-      message?: string
-    }
+    required: { configured: number; total: number }
+    optional: { configured: number; total: number }
   }
   timestamp: string
   version?: string
@@ -14,22 +13,39 @@ interface HealthCheck {
 
 /**
  * Health check endpoint for monitoring and load balancer health probes.
- * Returns overall system health status and individual component checks.
+ * Returns overall system health status without exposing specific configuration details.
  *
  * GET /api/health
  *
  * Response:
  * - 200: System healthy or degraded
+ * - 429: Rate limited
  * - 503: System unhealthy (critical components failing)
  */
-export async function GET() {
-  const checks: HealthCheck['checks'] = {}
+export async function GET(request: NextRequest) {
+  // Rate limiting: 100 requests per minute per IP (generous for health checks)
+  const clientIP = getClientIP(request)
+  const rateLimit = await checkRateLimit(`health:${clientIP}`, {
+    windowMs: 60 * 1000, // 1 minute
+    maxRequests: 100
+  })
+
+  if (!rateLimit.success) {
+    const retryAfterSeconds = Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
+    return NextResponse.json(
+      { error: 'Too many requests' },
+      {
+        status: 429,
+        headers: { 'Retry-After': String(Math.max(1, retryAfterSeconds)) }
+      }
+    )
+  }
+
   let hasFailure = false
   let hasWarning = false
 
   // Check required environment variables
   const requiredEnvVars = ['DATABASE_URL', 'PAYLOAD_SECRET']
-
   const optionalEnvVars = [
     'STRIPE_SECRET_KEY',
     'STRIPE_WEBHOOK_SECRET',
@@ -38,43 +54,29 @@ export async function GET() {
     'NEXT_PUBLIC_SENTRY_DSN',
   ]
 
-  // Check required env vars (failure = unhealthy)
+  // Count configured required env vars
+  let requiredConfigured = 0
   for (const envVar of requiredEnvVars) {
-    if (!process.env[envVar]) {
-      checks[`env:${envVar}`] = {
-        status: 'fail',
-        message: 'Required environment variable not set',
-      }
-      hasFailure = true
+    if (process.env[envVar]) {
+      requiredConfigured++
     } else {
-      checks[`env:${envVar}`] = { status: 'pass' }
+      hasFailure = true
     }
   }
 
-  // Check optional env vars (missing = warning)
+  // Count configured optional env vars
+  let optionalConfigured = 0
   for (const envVar of optionalEnvVars) {
-    if (!process.env[envVar]) {
-      checks[`env:${envVar}`] = {
-        status: 'warn',
-        message: 'Optional environment variable not set',
-      }
-      hasWarning = true
+    if (process.env[envVar]) {
+      optionalConfigured++
     } else {
-      checks[`env:${envVar}`] = { status: 'pass' }
+      hasWarning = true
     }
   }
 
   // Check SITE_PASSWORD if it's configured (for staging sites)
-  if (process.env.SITE_PASSWORD) {
-    if (process.env.SITE_PASSWORD.length < 8) {
-      checks['security:sitePassword'] = {
-        status: 'fail',
-        message: 'SITE_PASSWORD too short (min 8 characters)',
-      }
-      hasFailure = true
-    } else {
-      checks['security:sitePassword'] = { status: 'pass' }
-    }
+  if (process.env.SITE_PASSWORD && process.env.SITE_PASSWORD.length < 8) {
+    hasFailure = true
   }
 
   // Determine overall status
@@ -85,9 +87,13 @@ export async function GET() {
     status = 'degraded'
   }
 
+  // Return aggregated info without exposing which specific vars are missing
   const healthResponse: HealthCheck = {
     status,
-    checks,
+    checks: {
+      required: { configured: requiredConfigured, total: requiredEnvVars.length },
+      optional: { configured: optionalConfigured, total: optionalEnvVars.length },
+    },
     timestamp: new Date().toISOString(),
     version: process.env.VERCEL_GIT_COMMIT_SHA?.slice(0, 7) || 'local',
   }

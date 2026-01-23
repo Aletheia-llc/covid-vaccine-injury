@@ -1,12 +1,15 @@
-import { getPayload, Payload } from 'payload'
-import config from '@/payload.config'
-
 import { describe, it, beforeAll, expect } from 'vitest'
 
-let payload: Payload
+// Skip integration tests if required env vars are not configured
+const hasRequiredEnvVars = process.env.PAYLOAD_SECRET && process.env.DATABASE_URL
 
-describe('API', () => {
+describe.skipIf(!hasRequiredEnvVars)('API Integration Tests', () => {
+  // Dynamic imports to avoid errors when env vars are missing
+  let payload: Awaited<ReturnType<typeof import('payload')['getPayload']>>
+
   beforeAll(async () => {
+    const { getPayload } = await import('payload')
+    const config = (await import('@/payload.config')).default
     const payloadConfig = await config
     payload = await getPayload({ config: payloadConfig })
   })

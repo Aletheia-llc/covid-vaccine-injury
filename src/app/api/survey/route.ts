@@ -7,6 +7,9 @@ import { sanitizeEmail, sanitizeZip, sanitizeComment } from '@/lib/sanitize'
 import { verifyRecaptchaTokenSimple } from '@/lib/recaptcha'
 import { log } from '@/lib/logger'
 
+// Maximum request body size (16KB - survey data should be small)
+const MAX_REQUEST_SIZE = 16 * 1024
+
 export async function POST(request: NextRequest) {
   // CSRF protection: validate request origin
   if (!validateOrigin(request)) {
@@ -14,6 +17,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Check content-length to reject oversized requests early
+    const contentLength = request.headers.get('content-length')
+    if (contentLength && parseInt(contentLength, 10) > MAX_REQUEST_SIZE) {
+      return NextResponse.json({ error: 'Request too large' }, { status: 413 })
+    }
+
     // Rate limiting: 5 survey submissions per hour per IP
     const clientIP = getClientIP(request)
     const rateLimit = await checkRateLimit(`survey:${clientIP}`, {
@@ -22,9 +31,13 @@ export async function POST(request: NextRequest) {
     })
 
     if (!rateLimit.success) {
+      const retryAfterSeconds = Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
       return NextResponse.json(
         { error: 'Too many submissions. Please try again later.' },
-        { status: 429 }
+        {
+          status: 429,
+          headers: { 'Retry-After': String(Math.max(1, retryAfterSeconds)) }
+        }
       )
     }
 
@@ -78,16 +91,38 @@ export async function POST(request: NextRequest) {
     }
 
     // Validate optional select fields - returns the value if valid, undefined otherwise
-    const validateOption = <T extends string>(value: string | undefined, validOptions: readonly T[]): T | undefined => {
+    // Logs a warning if an invalid value was submitted (potential data quality issue or tampering)
+    const validateOption = <T extends string>(
+      value: string | undefined,
+      validOptions: readonly T[],
+      fieldName: string
+    ): T | undefined => {
       if (!value) return undefined
-      return (validOptions as readonly string[]).includes(value) ? (value as T) : undefined
+      if ((validOptions as readonly string[]).includes(value)) {
+        return value as T
+      }
+      // Log invalid value for monitoring (could indicate form tampering)
+      log.warn('survey_invalid_option', {
+        field: fieldName,
+        value: String(value).substring(0, 50), // Truncate for safety
+      })
+      return undefined
     }
 
     // Validate q9 array
     type Q9Option = typeof validQ9[number]
     const validateQ9 = (values: string[] | undefined): Q9Option[] | undefined => {
       if (!values || !Array.isArray(values)) return undefined
-      const filtered = values.filter((v): v is Q9Option => (validQ9 as readonly string[]).includes(v))
+      const filtered = values.filter((v): v is Q9Option => {
+        const isValid = (validQ9 as readonly string[]).includes(v)
+        if (!isValid && v) {
+          log.warn('survey_invalid_option', {
+            field: 'q9',
+            value: String(v).substring(0, 50),
+          })
+        }
+        return isValid
+      })
       return filtered.length > 0 ? filtered : undefined
     }
 
@@ -101,14 +136,14 @@ export async function POST(request: NextRequest) {
     await payload.create({
       collection: 'survey-responses',
       data: {
-        q1: validateOption(q1, validQ1),
-        q2: validateOption(q2, validQ2),
-        q3: validateOption(q3, validQ3),
-        q4: validateOption(q4, validQ4),
-        q5: validateOption(q5, validQ5),
-        q6: validateOption(q6, validQ6),
-        q7: validateOption(q7, validQ7),
-        q8: validateOption(q8, validQ8),
+        q1: validateOption(q1, validQ1, 'q1'),
+        q2: validateOption(q2, validQ2, 'q2'),
+        q3: validateOption(q3, validQ3, 'q3'),
+        q4: validateOption(q4, validQ4, 'q4'),
+        q5: validateOption(q5, validQ5, 'q5'),
+        q6: validateOption(q6, validQ6, 'q6'),
+        q7: validateOption(q7, validQ7, 'q7'),
+        q8: validateOption(q8, validQ8, 'q8'),
         q9: validateQ9(q9),
         comments: comments || undefined,
         zip: zip || undefined,

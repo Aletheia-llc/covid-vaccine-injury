@@ -106,7 +106,6 @@ Copy `.env.example` to `.env` and configure:
 | `STRIPE_SECRET_KEY` | Stripe secret key for donations |
 | `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `GOOGLE_CIVIC_API_KEY` | Google Civic API for representative lookup |
 | `NEXT_PUBLIC_SENTRY_DSN` | Sentry error tracking DSN |
 | `ADMIN_API_KEY` | API key for protected endpoints |
 

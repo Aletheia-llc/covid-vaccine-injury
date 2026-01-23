@@ -162,7 +162,13 @@ export function withCsrfProtection(
 
 /**
  * Returns a 403 Forbidden response for CSRF violations
- * @deprecated Use validateCsrfToken() with withCsrfProtection() instead
+ *
+ * @deprecated Since v1.1.0. Will be removed in v2.0.0.
+ *   Use withCsrfProtection() HOF instead, which handles responses automatically.
+ *
+ * Migration example:
+ *   Before: if (!validateOrigin(request)) return csrfErrorResponse()
+ *   After:  export const POST = withCsrfProtection(async (request) => { ... })
  */
 export function csrfErrorResponse() {
   return new Response(JSON.stringify({ error: 'Invalid CSRF token' }), {
@@ -173,8 +179,16 @@ export function csrfErrorResponse() {
 
 // =============================================================================
 // BACKWARD COMPATIBILITY - Origin-based validation (for existing API routes)
+// =============================================================================
 // These functions are kept for backward compatibility with existing code.
-// New code should use token-based CSRF protection above.
+// New code should use token-based CSRF protection (validateCsrfToken).
+//
+// MIGRATION GUIDE:
+// 1. Client: Fetch token from GET /api/csrf before form submission
+// 2. Client: Include token in x-csrf-token header or body._csrf field
+// 3. Server: Use withCsrfProtection() HOF or call validateCsrfToken()
+//
+// Origin-based validation will be removed in v2.0.0.
 // =============================================================================
 
 import { NextRequest } from 'next/server'
@@ -183,8 +197,11 @@ import { NextRequest } from 'next/server'
  * Validates the origin of a request to prevent CSRF attacks.
  * Checks that the Origin or Referer header matches our allowed domains.
  *
- * @deprecated Use token-based CSRF protection instead (validateCsrfToken)
- * Kept for backward compatibility with existing API routes.
+ * @deprecated Since v1.1.0. Will be removed in v2.0.0.
+ *   Use token-based CSRF protection instead: validateCsrfToken() or withCsrfProtection()
+ *
+ * Note: Origin-based validation is less secure than token-based validation because
+ * some browsers don't send Origin headers and Referer can be spoofed in some cases.
  */
 export function validateOrigin(request: NextRequest | Request): boolean {
   const origin = request.headers.get('origin')

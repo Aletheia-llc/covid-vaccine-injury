@@ -7,14 +7,28 @@
 
 import { log } from './logger'
 
-// reCAPTCHA configuration - all values must come from environment variables
+// =============================================================================
+// Configuration
+// =============================================================================
+
+// Environment variables for reCAPTCHA
 const RECAPTCHA_SITE_KEY = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY
 const RECAPTCHA_SECRET_KEY = process.env.RECAPTCHA_SECRET_KEY
 const RECAPTCHA_PROJECT_ID = process.env.RECAPTCHA_PROJECT_ID
 
-// Minimum score threshold (0.0 to 1.0)
-// Scores below this are considered suspicious
-// 0.7 is a balanced threshold - higher than default 0.5 for better security
+/**
+ * Minimum score threshold for reCAPTCHA verification (0.0 to 1.0)
+ *
+ * Scores below this threshold are considered suspicious/bot-like.
+ * - 0.0 = Definitely a bot
+ * - 0.5 = Google's default threshold
+ * - 0.7 = Our threshold (balanced security vs. user experience)
+ * - 1.0 = Definitely human
+ *
+ * Adjust based on your spam levels:
+ * - Lower (0.5-0.6): More permissive, fewer false positives
+ * - Higher (0.8-0.9): More strict, may block legitimate users
+ */
 const MIN_SCORE_THRESHOLD = 0.7
 
 // Valid actions that we expect from forms
@@ -91,8 +105,13 @@ export async function verifyRecaptchaToken(
 
   try {
     // Use reCAPTCHA Enterprise API
-    const projectId = RECAPTCHA_PROJECT_ID || 'your-project-id'
-    const url = `https://recaptchaenterprise.googleapis.com/v1/projects/${projectId}/assessments?key=${RECAPTCHA_SECRET_KEY}`
+    if (!RECAPTCHA_PROJECT_ID) {
+      log.error('recaptcha_project_id_missing', {
+        message: 'RECAPTCHA_PROJECT_ID environment variable is required for Enterprise API',
+      })
+      return { success: false, error: 'reCAPTCHA configuration error' }
+    }
+    const url = `https://recaptchaenterprise.googleapis.com/v1/projects/${RECAPTCHA_PROJECT_ID}/assessments?key=${RECAPTCHA_SECRET_KEY}`
 
     const response = await fetch(url, {
       method: 'POST',

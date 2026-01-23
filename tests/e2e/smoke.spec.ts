@@ -31,9 +31,9 @@ test.describe('Smoke Tests', () => {
     expect(response.status()).toBe(200)
 
     const body = await response.json()
-    expect(body.token).toBeDefined()
-    expect(typeof body.token).toBe('string')
-    expect(body.token.length).toBeGreaterThan(0)
+    expect(body.csrfToken).toBeDefined()
+    expect(typeof body.csrfToken).toBe('string')
+    expect(body.csrfToken.length).toBeGreaterThan(0)
   })
 })
 

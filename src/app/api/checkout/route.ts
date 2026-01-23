@@ -1,15 +1,25 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { reportError } from '@/lib/error-reporting'
 import { log } from '@/lib/logger'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
+import { validateOrigin, csrfErrorResponse } from '@/lib/csrf'
 
 // Maximum request body size (1KB - checkout requests should be tiny)
 const MAX_REQUEST_SIZE = 1024
 // Maximum donation amount ($1 million - reasonable upper bound)
 const MAX_DONATION_AMOUNT = 1000000
 
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
+  // CSRF protection: validate request origin
+  if (!validateOrigin(request)) {
+    log.security('checkout_csrf_rejected', {
+      origin: request.headers.get('origin'),
+      referer: request.headers.get('referer')
+    })
+    return csrfErrorResponse()
+  }
+
   try {
     // Get client IP for rate limiting
     const ip = getClientIP(request)
@@ -18,9 +28,13 @@ export async function POST(request: Request) {
     const rateCheck = await checkRateLimit(ip, { maxRequests: 10, windowMs: 60000 })
     if (!rateCheck.success) {
       log.security('checkout_rate_limited', { ipPrefix: ip.substring(0, 8) })
+      const retryAfterSeconds = Math.ceil((rateCheck.resetTime - Date.now()) / 1000)
       return NextResponse.json(
         { error: 'Too many requests. Please try again in a minute.' },
-        { status: 429 }
+        {
+          status: 429,
+          headers: { 'Retry-After': String(Math.max(1, retryAfterSeconds)) }
+        }
       )
     }
 
@@ -70,9 +84,14 @@ export async function POST(request: Request) {
       )
     }
 
-    // Validate key format (log server-side only, never expose to client)
-    if (!stripeKey.startsWith('sk_test_') && !stripeKey.startsWith('sk_live_')) {
-      log.security('stripe_checkout_invalid_key_format')
+    // Validate key format more thoroughly (log server-side only, never expose to client)
+    // Stripe secret keys are: sk_test_ or sk_live_ followed by 24+ alphanumeric chars
+    const stripeKeyPattern = /^sk_(test|live)_[a-zA-Z0-9]{24,}$/
+    if (!stripeKeyPattern.test(stripeKey)) {
+      log.security('stripe_checkout_invalid_key_format', {
+        keyLength: stripeKey.length,
+        prefix: stripeKey.substring(0, 8),
+      })
       return NextResponse.json(
         { error: 'Payment system configuration error. Please contact support.' },
         { status: 500 }

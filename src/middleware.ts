@@ -25,21 +25,8 @@ export function middleware(_request: NextRequest) {
     'camera=(), microphone=(), geolocation=(), interest-cohort=()'
   )
 
-  // Content Security Policy
-  // Allow Vercel Analytics, Google Fonts, and inline styles for the site
-  const csp = [
-    "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://va.vercel-scripts.com https://vercel.live",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https:",
-    "connect-src 'self' https://va.vercel-scripts.com https://vitals.vercel-insights.com https://vercel.live wss://ws-us3.pusher.com",
-    "frame-ancestors 'none'",
-    "base-uri 'self'",
-    "form-action 'self'",
-  ].join('; ')
-
-  headers.set('Content-Security-Policy', csp)
+  // Note: Content Security Policy is defined in next.config.mjs to avoid conflicts
+  // The consolidated CSP there includes all required domains (Stripe, Sentry, reCAPTCHA, Vercel Analytics, etc.)
 
   // HSTS - enforce HTTPS (only in production)
   if (process.env.NODE_ENV === 'production') {

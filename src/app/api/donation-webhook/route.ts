@@ -147,11 +147,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// Health check endpoint
+// Health check endpoint - does not expose configuration details
 export async function GET() {
   return NextResponse.json({
     status: 'ok',
     endpoint: 'donation-webhook',
-    configured: !!STRIPE_WEBHOOK_SECRET,
   })
 }

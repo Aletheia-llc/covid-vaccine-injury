@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { isAdminAuthenticated, unauthorizedResponse } from '@/lib/auth'
+import { log } from '@/lib/logger'
 
 export async function GET() {
   // Require admin authentication
@@ -38,6 +39,27 @@ export async function GET() {
       'Status',
     ]
 
+    // Log if we hit the limit (pagination may be needed)
+    if (responses.docs.length >= 10000) {
+      log.warn('survey_export_limit_reached', {
+        message: 'Export hit 10,000 record limit. Some responses may be missing.',
+        totalDocs: responses.totalDocs,
+      })
+    }
+
+    // Escape CSV values properly - handles all special characters
+    const escapeCSV = (value: string): string => {
+      // Normalize all line endings to spaces for CSV compatibility
+      let escaped = value.replace(/\r\n/g, ' ').replace(/\r/g, ' ').replace(/\n/g, ' ')
+      // Escape double quotes by doubling them
+      escaped = escaped.replace(/"/g, '""')
+      // Wrap in quotes if contains special characters
+      if (escaped.includes(',') || escaped.includes('"') || escaped.includes(';')) {
+        return `"${escaped}"`
+      }
+      return escaped
+    }
+
     const rows = responses.docs.map((doc) => [
       doc.id,
       new Date(doc.createdAt).toISOString(),
@@ -50,19 +72,11 @@ export async function GET() {
       doc.q7 || '',
       doc.q8 || '',
       Array.isArray(doc.q9) ? doc.q9.join('; ') : '',
-      (doc.comments || '').replace(/"/g, '""').replace(/\n/g, ' '),
+      doc.comments || '',
       doc.zip || '',
       doc.email || '',
       doc.status || '',
     ])
-
-    // Escape CSV values
-    const escapeCSV = (value: string) => {
-      if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-        return `"${value}"`
-      }
-      return value
-    }
 
     const csv = [
       headers.join(','),
@@ -76,7 +90,7 @@ export async function GET() {
       },
     })
   } catch (error) {
-    console.error('Error exporting survey data:', error)
+    log.error('survey_export_error', { error })
     return NextResponse.json({ error: 'Failed to export' }, { status: 500 })
   }
 }

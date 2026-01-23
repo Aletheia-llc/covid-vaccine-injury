@@ -7,6 +7,9 @@ import { sanitizeName, sanitizeEmail, sanitizePhone, sanitizeZip } from '@/lib/s
 import { verifyRecaptchaTokenSimple } from '@/lib/recaptcha'
 import { log } from '@/lib/logger'
 
+// Maximum request body size (4KB - subscription data should be tiny)
+const MAX_REQUEST_SIZE = 4 * 1024
+
 export async function POST(request: NextRequest) {
   // CSRF protection: validate request origin
   if (!validateOrigin(request)) {
@@ -14,6 +17,12 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // Check content-length to reject oversized requests early
+    const contentLength = request.headers.get('content-length')
+    if (contentLength && parseInt(contentLength, 10) > MAX_REQUEST_SIZE) {
+      return NextResponse.json({ error: 'Request too large' }, { status: 413 })
+    }
+
     // Rate limiting: 10 subscription attempts per hour per IP
     const clientIP = getClientIP(request)
     const rateLimit = await checkRateLimit(`subscribe:${clientIP}`, {
@@ -22,9 +31,13 @@ export async function POST(request: NextRequest) {
     })
 
     if (!rateLimit.success) {
+      const retryAfterSeconds = Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
       return NextResponse.json(
         { error: 'Too many attempts. Please try again later.' },
-        { status: 429 }
+        {
+          status: 429,
+          headers: { 'Retry-After': String(Math.max(1, retryAfterSeconds)) }
+        }
       )
     }
 

@@ -2081,6 +2081,24 @@ section {
   .nav-links { display: none; }
   .nav-cta { display: none; }
 
+  /* Reduce section padding on tablet */
+  .funnel-section,
+  .comparison-section,
+  .outlier-section,
+  .calculator-section,
+  .trustfund-section,
+  .action-section {
+    padding: 80px 20px;
+  }
+
+  .hero-section,
+  .resources-hero,
+  .survey-page,
+  .legal-page,
+  .contact-page {
+    padding: 80px 20px 60px;
+  }
+
   .comparison-grid,
   .calculator-grid {
     grid-template-columns: 1fr;
@@ -2090,6 +2108,8 @@ section {
     grid-template-columns: 1fr;
     text-align: center;
     gap: 12px;
+    margin-bottom: 16px;
+    padding: 20px;
   }
 
   .waterfall-label {
@@ -2098,6 +2118,17 @@ section {
 
   .funnel-summary {
     grid-template-columns: 1fr;
+    gap: 16px;
+    margin-top: 40px;
+    padding-top: 32px;
+  }
+
+  .funnel-summary-stat {
+    padding: 20px;
+  }
+
+  .funnel-summary-stat .stat-number {
+    font-size: 32px;
   }
 
   .outlier-legend,
@@ -2121,6 +2152,61 @@ section {
 }
 
 @media (max-width: 600px) {
+  /* Reduce section padding on mobile */
+  .funnel-section,
+  .comparison-section,
+  .outlier-section,
+  .calculator-section,
+  .trustfund-section,
+  .action-section {
+    padding: 60px 16px;
+  }
+
+  .hero-section,
+  .resources-hero,
+  .survey-page,
+  .legal-page,
+  .contact-page {
+    padding: 60px 16px 48px;
+  }
+
+  .funnel-summary {
+    gap: 12px;
+    margin-top: 32px;
+    padding-top: 24px;
+  }
+
+  .funnel-summary-stat {
+    padding: 16px;
+  }
+
+  .funnel-summary-stat .stat-number {
+    font-size: 28px;
+    margin-bottom: 4px;
+  }
+
+  .funnel-summary-stat .stat-label {
+    font-size: 13px;
+  }
+
+  /* Waterfall section mobile spacing */
+  .waterfall-container {
+    gap: 12px;
+  }
+
+  .waterfall-stage {
+    padding: 16px;
+    gap: 8px;
+  }
+
+  .waterfall-bar-container {
+    height: 32px;
+  }
+
+  .waterfall-count {
+    font-size: 18px;
+  }
+
   .hero-stats {
     grid-template-columns: 1fr 1fr;
   }
@@ -4168,6 +4254,56 @@ section {
 }
 
 @media (max-width: 480px) {
+  /* Tightest padding for small phones */
+  .funnel-section,
+  .comparison-section,
+  .outlier-section,
+  .calculator-section,
+  .trustfund-section,
+  .action-section {
+    padding: 48px 12px;
+  }
+
+  .hero-section,
+  .resources-hero,
+  .survey-page,
+  .legal-page,
+  .contact-page {
+    padding: 48px 12px 36px;
+  }
+
+  .funnel-summary {
+    gap: 10px;
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+
+  .funnel-summary-stat {
+    padding: 14px 12px;
+    border-radius: 12px;
+  }
+
+  .funnel-summary-stat .stat-number {
+    font-size: 24px;
+  }
+
+  .funnel-summary-stat .stat-label {
+    font-size: 12px;
+  }
+
+  /* Waterfall tighter on small screens */
+  .waterfall-stage {
+    padding: 12px;
+  }
+
+  .waterfall-count {
+    font-size: 16px;
+  }
+
+  .waterfall-stat {
+    font-size: 12px;
+  }
+
   .toast-container {
     left: 16px;
     right: 16px;

@@ -2,14 +2,14 @@ import { withPayload } from '@payloadcms/next/withPayload'
 import { withSentryConfig } from '@sentry/nextjs'
 
 // Content Security Policy
-// Allows: self, Stripe, Sentry, Supabase, Google reCAPTCHA, and necessary inline styles for Next.js
+// Consolidated CSP allowing: self, Stripe, Sentry, Supabase, Google reCAPTCHA, Vercel Analytics, and Google Fonts
 const cspHeader = `
   default-src 'self';
-  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.sentry.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/;
-  style-src 'self' 'unsafe-inline';
-  img-src 'self' data: blob: https://*.stripe.com https://www.gstatic.com/recaptcha/;
-  font-src 'self' data:;
-  connect-src 'self' https://*.supabase.co https://api.stripe.com https://*.sentry.io https://*.ingest.sentry.io https://www.google.com/recaptcha/ https://recaptchaenterprise.googleapis.com;
+  script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://*.sentry.io https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://va.vercel-scripts.com https://vercel.live;
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  img-src 'self' data: blob: https://*.stripe.com https://www.gstatic.com/recaptcha/ https:;
+  font-src 'self' data: https://fonts.gstatic.com;
+  connect-src 'self' https://*.supabase.co https://api.stripe.com https://*.sentry.io https://*.ingest.sentry.io https://www.google.com/recaptcha/ https://recaptchaenterprise.googleapis.com https://va.vercel-scripts.com https://vitals.vercel-insights.com https://vercel.live wss://ws-us3.pusher.com;
   frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://www.google.com/recaptcha/ https://recaptcha.google.com;
   frame-ancestors 'none';
   form-action 'self';
