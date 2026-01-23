@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { setCsrfCookie } from '@/lib/csrf'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
+import { RATE_LIMITS } from '@/lib/constants'
 
 /**
  * GET /api/csrf
@@ -10,10 +11,7 @@ import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 export async function GET(request: NextRequest) {
   // Rate limiting: 30 requests per minute per IP (prevents token farming)
   const clientIP = getClientIP(request)
-  const rateLimit = await checkRateLimit(`csrf:${clientIP}`, {
-    windowMs: 60 * 1000, // 1 minute
-    maxRequests: 30
-  })
+  const rateLimit = await checkRateLimit(`csrf:${clientIP}`, RATE_LIMITS.CSRF)
 
   if (!rateLimit.success) {
     const retryAfterSeconds = Math.ceil((rateLimit.resetTime - Date.now()) / 1000)

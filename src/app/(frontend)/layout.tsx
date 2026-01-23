@@ -41,6 +41,57 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
       <head>
         <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='none' stroke='%23d4a84b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m16 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z'/><path d='m2 16 3-8 3 8c-.87.65-1.92 1-3 1s-2.13-.35-3-1Z'/><path d='M7 21h10'/><path d='M12 3v18'/><path d='M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2'/></svg>" />
         <link rel="canonical" href="https://covidvaccineinjury.us/" />
+        {/* JSON-LD Structured Data for SEO */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@graph': [
+                {
+                  '@type': 'Organization',
+                  '@id': 'https://covidvaccineinjury.us/#organization',
+                  name: 'U.S. Covid Vaccine Injuries',
+                  url: 'https://covidvaccineinjury.us',
+                  description: 'Advocating for fair compensation for Americans injured by COVID-19 vaccines through reform of the CICP program.',
+                  sameAs: [],
+                },
+                {
+                  '@type': 'WebSite',
+                  '@id': 'https://covidvaccineinjury.us/#website',
+                  url: 'https://covidvaccineinjury.us',
+                  name: 'U.S. Covid Vaccine Injuries',
+                  publisher: {
+                    '@id': 'https://covidvaccineinjury.us/#organization',
+                  },
+                  description: '14,046 COVID-19 vaccine injury claims filed with CICP. Only 42 compensated - a 0.3% approval rate vs. 48% for VICP.',
+                },
+                {
+                  '@type': 'WebPage',
+                  '@id': 'https://covidvaccineinjury.us/#webpage',
+                  url: 'https://covidvaccineinjury.us',
+                  name: 'U.S. Covid Vaccine Injuries | Fair Compensation for Americans',
+                  isPartOf: {
+                    '@id': 'https://covidvaccineinjury.us/#website',
+                  },
+                  about: {
+                    '@type': 'Thing',
+                    name: 'COVID-19 Vaccine Injury Compensation',
+                    description: 'Information about the Countermeasures Injury Compensation Program (CICP) and advocacy for reform.',
+                  },
+                  mainEntity: {
+                    '@type': 'Article',
+                    headline: 'The CICP Compensation Gap',
+                    description: 'The CICP has approved only 0.3% of COVID vaccine injury claims compared to 48% for the VICP.',
+                    author: {
+                      '@id': 'https://covidvaccineinjury.us/#organization',
+                    },
+                  },
+                },
+              ],
+            }),
+          }}
+        />
         {/* reCAPTCHA v3 - only load if site key is configured */}
         {process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && (
           <Script

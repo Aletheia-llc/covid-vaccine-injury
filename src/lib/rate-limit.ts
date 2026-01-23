@@ -13,6 +13,7 @@
  */
 
 import { log } from './logger'
+import { RATE_LIMITS, TIME } from './constants'
 
 // ============================================================================
 // Types
@@ -168,18 +169,9 @@ async function checkUpstashRateLimit(
 // Main Rate Limit Function
 // ============================================================================
 
-// Default rate limit: 10 requests per minute
-// This is a conservative default for unlabeled/generic endpoints.
-// Individual endpoints should specify their own limits based on expected usage:
-// - Forms (survey, contact, subscribe): 5-10 per hour
-// - Lookups (representatives): 30 per hour
-// - Checkout: 10 per minute
-// - Health checks: 100 per minute
-// - CSRF tokens: 30 per minute
-const DEFAULT_RATE_LIMIT: RateLimitConfig = {
-  windowMs: 60000,   // 1 minute
-  maxRequests: 10,   // 10 requests
-}
+// Default rate limit uses centralized constants
+// See src/lib/constants.ts for all rate limit configurations
+const DEFAULT_RATE_LIMIT: RateLimitConfig = RATE_LIMITS.DEFAULT
 
 /**
  * Check rate limit for an identifier (usually IP address).
@@ -232,7 +224,7 @@ export async function checkRateLimit(
     return {
       success: false,
       remaining: 0,
-      resetTime: Date.now() + 60000,
+      resetTime: Date.now() + TIME.MINUTE,
     }
   }
 }

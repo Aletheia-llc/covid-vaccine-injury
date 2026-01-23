@@ -6,9 +6,7 @@ import { validateCsrfToken } from '@/lib/csrf'
 import { sanitizeEmail, sanitizeZip, sanitizeComment } from '@/lib/sanitize'
 import { verifyRecaptchaTokenSimple } from '@/lib/recaptcha'
 import { createRequestLogger } from '@/lib/logger'
-
-// Maximum request body size (16KB - survey data should be small)
-const MAX_REQUEST_SIZE = 16 * 1024
+import { RATE_LIMITS, REQUEST_SIZE_LIMITS } from '@/lib/constants'
 
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID()
@@ -27,16 +25,13 @@ export async function POST(request: NextRequest) {
   try {
     // Check content-length to reject oversized requests early
     const contentLength = request.headers.get('content-length')
-    if (contentLength && parseInt(contentLength, 10) > MAX_REQUEST_SIZE) {
+    if (contentLength && parseInt(contentLength, 10) > REQUEST_SIZE_LIMITS.SURVEY) {
       return NextResponse.json({ error: 'Request too large' }, { status: 413 })
     }
 
     // Rate limiting: 5 survey submissions per hour per IP
     const clientIP = getClientIP(request)
-    const rateLimit = await checkRateLimit(`survey:${clientIP}`, {
-      windowMs: 60 * 60 * 1000, // 1 hour
-      maxRequests: 5
-    })
+    const rateLimit = await checkRateLimit(`survey:${clientIP}`, RATE_LIMITS.SURVEY)
 
     if (!rateLimit.success) {
       const retryAfterSeconds = Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
@@ -51,9 +46,19 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    // Verify reCAPTCHA token (if configured)
+    // Verify reCAPTCHA token - required when reCAPTCHA is configured
+    const recaptchaConfigured = !!(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && process.env.RECAPTCHA_SECRET_KEY)
     const recaptchaToken = body.recaptchaToken
-    if (recaptchaToken) {
+
+    if (recaptchaConfigured) {
+      if (!recaptchaToken) {
+        log.warn({ event: 'survey_recaptcha_missing' }, 'reCAPTCHA token required but not provided')
+        return NextResponse.json(
+          { error: 'Security verification required. Please enable JavaScript and try again.' },
+          { status: 400, headers: { 'X-Request-ID': requestId } }
+        )
+      }
+
       const recaptchaResult = await verifyRecaptchaTokenSimple(recaptchaToken)
       if (!recaptchaResult.success) {
         log.warn({ event: 'survey_recaptcha_failed', error: recaptchaResult.error }, 'reCAPTCHA verification failed')

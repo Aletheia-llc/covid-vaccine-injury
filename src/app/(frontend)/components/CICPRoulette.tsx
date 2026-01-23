@@ -33,9 +33,11 @@ interface CICPRouletteProps {
   onClose?: () => void;
 }
 
+import { UI } from '@/lib/constants'
+
 // Sound effects - uses audio files from /public/sounds/
 // Falls back to Web Audio API synthesis if files don't exist
-const SPIN_DURATION = 2000; // 2 seconds to match animation
+const SPIN_DURATION = UI.ROULETTE_SPIN_DURATION_MS;
 
 // Store reference to current spin audio so we can stop it precisely
 let currentSpinAudio: HTMLAudioElement | null = null;

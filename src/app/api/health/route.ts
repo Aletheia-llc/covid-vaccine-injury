@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
+import { RATE_LIMITS } from '@/lib/constants'
 
 interface HealthCheck {
   status: 'healthy' | 'degraded' | 'unhealthy'
@@ -25,10 +26,7 @@ interface HealthCheck {
 export async function GET(request: NextRequest) {
   // Rate limiting: 100 requests per minute per IP (generous for health checks)
   const clientIP = getClientIP(request)
-  const rateLimit = await checkRateLimit(`health:${clientIP}`, {
-    windowMs: 60 * 1000, // 1 minute
-    maxRequests: 100
-  })
+  const rateLimit = await checkRateLimit(`health:${clientIP}`, RATE_LIMITS.HEALTH)
 
   if (!rateLimit.success) {
     const retryAfterSeconds = Math.ceil((rateLimit.resetTime - Date.now()) / 1000)

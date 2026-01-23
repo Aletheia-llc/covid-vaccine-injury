@@ -4,11 +4,7 @@ import { reportError } from '@/lib/error-reporting'
 import { createRequestLogger } from '@/lib/logger'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { validateCsrfToken } from '@/lib/csrf'
-
-// Maximum request body size (1KB - checkout requests should be tiny)
-const MAX_REQUEST_SIZE = 1024
-// Maximum donation amount ($1 million - reasonable upper bound)
-const MAX_DONATION_AMOUNT = 1000000
+import { RATE_LIMITS, REQUEST_SIZE_LIMITS, VALIDATION } from '@/lib/constants'
 
 export async function POST(request: NextRequest) {
   const requestId = crypto.randomUUID()
@@ -33,7 +29,7 @@ export async function POST(request: NextRequest) {
     const ip = getClientIP(request)
 
     // Check rate limit (10 checkout attempts per minute)
-    const rateCheck = await checkRateLimit(ip, { maxRequests: 10, windowMs: 60000 })
+    const rateCheck = await checkRateLimit(ip, RATE_LIMITS.CHECKOUT)
     if (!rateCheck.success) {
       log.warn({ event: 'checkout_rate_limited', ipPrefix: ip.substring(0, 8) }, 'Rate limit exceeded')
       const retryAfterSeconds = Math.ceil((rateCheck.resetTime - Date.now()) / 1000)
@@ -48,7 +44,7 @@ export async function POST(request: NextRequest) {
 
     // Check content-length to reject oversized requests early
     const contentLength = request.headers.get('content-length')
-    if (contentLength && parseInt(contentLength, 10) > MAX_REQUEST_SIZE) {
+    if (contentLength && parseInt(contentLength, 10) > REQUEST_SIZE_LIMITS.CHECKOUT) {
       return NextResponse.json({ error: 'Request too large' }, { status: 413 })
     }
 
@@ -65,10 +61,10 @@ export async function POST(request: NextRequest) {
     if (
       typeof amount !== 'number' ||
       !Number.isFinite(amount) ||
-      amount < 5 ||
-      amount > MAX_DONATION_AMOUNT
+      amount < VALIDATION.MIN_DONATION_AMOUNT ||
+      amount > VALIDATION.MAX_DONATION_AMOUNT
     ) {
-      if (typeof amount === 'number' && amount > MAX_DONATION_AMOUNT) {
+      if (typeof amount === 'number' && amount > VALIDATION.MAX_DONATION_AMOUNT) {
         return NextResponse.json(
           { error: 'For donations over $1,000,000, please contact us directly' },
           { status: 400 }

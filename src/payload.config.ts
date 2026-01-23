@@ -13,18 +13,13 @@ import { FormSubmissions } from './collections/FormSubmissions'
 import { SurveyResponses } from './collections/SurveyResponses'
 import { Subscribers } from './collections/Subscribers'
 import { LegalPages } from './collections/LegalPages'
+import { assertValidEnv } from './lib/env-validation'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
 
-// Validate required environment variables
-const getRequiredEnvVar = (name: string): string => {
-  const value = process.env[name]
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`)
-  }
-  return value
-}
+// Validate environment variables at startup
+assertValidEnv()
 
 export default buildConfig({
   admin: {
@@ -52,13 +47,13 @@ export default buildConfig({
   },
   collections: [Users, FAQs, Statistics, Resources, FormSubmissions, SurveyResponses, Subscribers, LegalPages],
   editor: lexicalEditor(),
-  secret: getRequiredEnvVar('PAYLOAD_SECRET'),
+  secret: process.env.PAYLOAD_SECRET!,
   typescript: {
     outputFile: path.resolve(dirname, 'payload-types.ts'),
   },
   db: postgresAdapter({
     pool: {
-      connectionString: getRequiredEnvVar('DATABASE_URL'),
+      connectionString: process.env.DATABASE_URL!,
     },
   }),
   sharp,

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import yaml from 'js-yaml'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { log } from '@/lib/logger'
+import { RATE_LIMITS, SECURITY } from '@/lib/constants'
 
 interface WIMRResult {
   name: string
@@ -46,12 +47,11 @@ interface Representative {
 // Cache for legislators data
 let legislatorsCache: Legislator[] | null = null
 let legislatorsCacheTime = 0
-const CACHE_DURATION = 24 * 60 * 60 * 1000 // 24 hours
 
 async function getLegislatorsData(): Promise<Legislator[]> {
   const now = Date.now()
 
-  if (legislatorsCache && (now - legislatorsCacheTime) < CACHE_DURATION) {
+  if (legislatorsCache && (now - legislatorsCacheTime) < SECURITY.LEGISLATORS_CACHE_MS) {
     return legislatorsCache
   }
 
@@ -108,10 +108,7 @@ function findContactForm(legislators: Legislator[], name: string, state: string)
 export async function GET(request: NextRequest) {
   // Rate limiting: 30 lookups per hour per IP
   const clientIP = getClientIP(request)
-  const rateLimit = await checkRateLimit(`reps:${clientIP}`, {
-    windowMs: 60 * 60 * 1000, // 1 hour
-    maxRequests: 30
-  })
+  const rateLimit = await checkRateLimit(`reps:${clientIP}`, RATE_LIMITS.REPRESENTATIVES)
 
   if (!rateLimit.success) {
     const retryAfterSeconds = Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
