@@ -25,35 +25,51 @@ All POST endpoints implement:
 
 ### CSRF Token Flow
 
-All POST endpoints require a valid CSRF token. The flow is:
+All POST endpoints require a valid CSRF token. The flow uses a double-submit pattern:
 
-1. **Fetch a CSRF token** from `/api/csrf`
+1. **Fetch a CSRF token** from `/api/csrf` - this also sets an httpOnly cookie
 2. **Include the token** in subsequent POST requests via `x-csrf-token` header
-3. **Include credentials** to send the associated cookie
+3. **Include credentials** to send the associated cookie (token must match cookie)
 
 ```javascript
-// Step 1: Get CSRF token (also sets httpOnly cookie)
+// Step 1: Get CSRF token (also sets httpOnly cookie with same token)
 const csrfResponse = await fetch('/api/csrf', {
-  credentials: 'include'  // Important: include cookies
+  credentials: 'include'  // Important: allows cookie to be set
 })
 const { csrfToken } = await csrfResponse.json()
 
 // Step 2: Use token in POST request
 const response = await fetch('/api/survey', {
   method: 'POST',
-  credentials: 'include',  // Important: send cookie back
+  credentials: 'include',  // Important: sends cookie back for validation
   headers: {
     'Content-Type': 'application/json',
-    'x-csrf-token': csrfToken  // Token in header
+    'x-csrf-token': csrfToken  // Token in header must match cookie
   },
   body: JSON.stringify(data)
 })
 ```
 
+**Alternative: Token in Request Body**
+
+You can also include the token in the request body instead of a header:
+
+```javascript
+const response = await fetch('/api/contact', {
+  method: 'POST',
+  credentials: 'include',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    ...formData,
+    _csrf: csrfToken  // Or use 'csrfToken' field name
+  })
+})
+```
+
 **Token Details:**
-- Format: `timestamp.signature` (e.g., `1705312200000.a1b2c3d4...`)
+- Format: `timestamp.randomBytes.signature` (e.g., `1705312200000.a1b2c3d4...64chars...e5f6g7h8...64chars`)
 - Expiry: 1 hour from generation
-- Cookie: `csrf_secret` (httpOnly, Secure, SameSite=Strict)
+- Cookie: `csrf_token` (httpOnly, Secure, SameSite=Strict)
 
 **Common CSRF Errors:**
 | Error | Cause | Solution |
@@ -123,20 +139,24 @@ GET /api/csrf
 
 ```json
 {
-  "csrfToken": "1705312200000.a1b2c3d4e5f6..."
+  "csrfToken": "1705312200000.a1b2c3d4e5f6...64hexchars...e5f6g7h8...64hexchars"
 }
 ```
+
+The response also sets an httpOnly cookie (`csrf_token`) containing the same token value.
 
 **Usage**
 
 Include the token in form submissions:
 
 ```javascript
-const csrfResponse = await fetch('/api/csrf')
+// Always include credentials to receive and send the cookie
+const csrfResponse = await fetch('/api/csrf', { credentials: 'include' })
 const { csrfToken } = await csrfResponse.json()
 
 await fetch('/api/survey', {
   method: 'POST',
+  credentials: 'include',  // Required: sends cookie for double-submit validation
   headers: {
     'Content-Type': 'application/json',
     'x-csrf-token': csrfToken

@@ -82,15 +82,16 @@ describe('Environment Validation', () => {
         )
       })
 
-      it('fails for production-required vars when in production', () => {
+      it('passes in production even without optional vars (graceful degradation)', () => {
         ;(process.env as Record<string, string | undefined>).NODE_ENV = 'production'
 
         const result = validateEnv()
 
-        expect(result.valid).toBe(false)
-        expect(result.errors).toContainEqual(
-          expect.stringContaining('UPSTASH_REDIS_REST_URL')
-        )
+        // Should pass because no optional vars are marked as productionRequired
+        // Upstash, reCAPTCHA, Stripe etc. are all optional with graceful fallbacks
+        expect(result.valid).toBe(true)
+        // But should still have warnings about missing optional services
+        expect(result.warnings.length).toBeGreaterThan(0)
       })
 
       it('skips production checks during build phase', () => {

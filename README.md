@@ -221,11 +221,70 @@ npm run start
 | Document | Description |
 |----------|-------------|
 | [API.md](./API.md) | REST API endpoints, authentication, CSRF flow |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | System design and component overview |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | System design, caching, and data flow |
+| [CHANGELOG.md](./CHANGELOG.md) | Version history and release notes |
 | [CONTRIBUTING.md](./CONTRIBUTING.md) | Development guidelines and code style |
 | [DEPLOYMENT.md](./DEPLOYMENT.md) | Vercel deployment, environment setup |
-| [SECURITY.md](./SECURITY.md) | Security policy and vulnerability reporting |
+| [MONITORING.md](./MONITORING.md) | Logging, alerting, and observability |
+| [SECURITY.md](./SECURITY.md) | Security policy, compliance, incident response |
 | [TESTING.md](./TESTING.md) | Testing strategy, coverage requirements |
+
+## Troubleshooting
+
+### Common Issues
+
+**Port 3000 already in use**
+```bash
+# Find what's using the port
+lsof -i :3000
+
+# Kill the process or use a different port
+PORT=3001 npm run dev
+```
+
+**Database connection errors**
+- Verify `DATABASE_URL` is correct in your `.env` file
+- For Supabase, use the "Session pooler" connection string (not "Transaction pooler")
+- Ensure your IP is allowed in Supabase project settings
+
+**"PAYLOAD_SECRET is required" error**
+- Add `PAYLOAD_SECRET` to your `.env` file
+- Generate one with: `openssl rand -hex 32`
+- Must be at least 32 characters
+
+**Build fails with "Cannot find module"**
+```bash
+# Clean install dependencies
+rm -rf node_modules package-lock.json
+npm install
+```
+
+**TypeScript errors after pulling changes**
+```bash
+# Regenerate Payload types
+npm run generate:types
+```
+
+**Rate limiting warnings in logs**
+- This is expected if Upstash Redis is not configured
+- For production, configure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
+- Without Redis, rate limiting falls back gracefully
+
+**reCAPTCHA not working**
+- Ensure both `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` and `RECAPTCHA_SECRET_KEY` are set
+- In development, reCAPTCHA is optional and bypassed if not configured
+- Check that your domain is allowed in Google reCAPTCHA console
+
+**Stripe checkout not working**
+- Verify `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` are set
+- Use test keys (starting with `sk_test_` and `pk_test_`) for development
+- Check Stripe dashboard for webhook errors
+
+### Getting Help
+
+- Check [existing issues](https://github.com/Aletheia-llc/covid-vaccine-injury/issues)
+- Review the [documentation](#documentation)
+- Open a new issue with the bug report template
 
 ## Contributing
 

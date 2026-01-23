@@ -200,32 +200,49 @@ export const config = {
 
 ### Rate Limiting
 
+The application uses a tiered rate limiting strategy:
+
+1. **Production (Recommended)**: Upstash Redis for distributed rate limiting
+2. **Development/Fallback**: In-memory rate limiting
+
 ```typescript
 // src/lib/rate-limit.ts
-const rateLimitMap = new Map<string, { count: number; resetTime: number }>()
+import { log } from './logger'
 
-export function checkRateLimit(
+export interface RateLimitConfig {
+  windowMs: number    // Time window in milliseconds
+  maxRequests: number // Max requests per window
+}
+
+export interface RateLimitResult {
+  success: boolean
+  remaining: number
+  resetTime: number
+}
+
+// Main entry point - automatically selects backend
+export async function checkRateLimit(
   identifier: string,
-  config = { windowMs: 60000, maxRequests: 10 }
-) {
-  const now = Date.now()
-  const entry = rateLimitMap.get(identifier)
-
-  if (!entry || now > entry.resetTime) {
-    rateLimitMap.set(identifier, { count: 1, resetTime: now + config.windowMs })
-    return { success: true, remaining: config.maxRequests - 1 }
+  config: RateLimitConfig
+): Promise<RateLimitResult> {
+  // Try Upstash Redis first (production)
+  if (process.env.UPSTASH_REDIS_REST_URL && process.env.UPSTASH_REDIS_REST_TOKEN) {
+    const result = await checkUpstashRateLimit(identifier, config)
+    if (result) return result
   }
 
-  if (entry.count >= config.maxRequests) {
-    return { success: false, remaining: 0 }
+  // Fall back to in-memory (development/CI)
+  if (process.env.NODE_ENV === 'development' || process.env.CI) {
+    return checkMemoryRateLimit(identifier, config)
   }
 
-  entry.count++
-  return { success: true, remaining: config.maxRequests - entry.count }
+  // Production without Redis - log warning but allow request
+  log.warn('rate_limit_fallback', { message: 'No rate limiter configured' })
+  return { success: true, remaining: config.maxRequests, resetTime: Date.now() + config.windowMs }
 }
 
 export function getClientIP(request: Request): string {
-  // Prefer Vercel's trusted header
+  // Prefer Vercel's trusted header (can't be spoofed)
   const vercelIP = request.headers.get('x-vercel-forwarded-for')
   if (vercelIP) return vercelIP.split(',')[0].trim()
 
@@ -235,6 +252,16 @@ export function getClientIP(request: Request): string {
   return 'unknown'
 }
 ```
+
+**Rate Limit Configurations:**
+
+| Endpoint | Window | Max Requests |
+|----------|--------|--------------|
+| `/api/survey` | 1 hour | 5 |
+| `/api/contact` | 1 hour | 5 |
+| `/api/subscribe` | 1 hour | 10 |
+| `/api/checkout` | 1 minute | 10 |
+| `/api/representatives` | 1 hour | 30 |
 
 ### CSRF Protection
 
@@ -514,6 +541,89 @@ const handleSubmit = async (data: FormData) => {
 - [ ] Add security middleware
 - [ ] Set up Vercel Analytics
 - [ ] Deploy and verify admin panel works
+
+## Caching Strategy
+
+### Static Assets
+
+Next.js automatically caches static assets at the edge:
+
+- **Images**: Optimized and cached via `next/image`
+- **CSS/JS**: Hashed filenames, immutable caching
+- **Fonts**: Preloaded and cached
+
+### API Route Caching
+
+| Endpoint | Cache Strategy |
+|----------|---------------|
+| `/api/health` | No cache (real-time status) |
+| `/api/csrf` | No cache (unique per request) |
+| `/api/representatives` | 24-hour server-side cache |
+| `/api/survey/stats` | No cache (real-time data) |
+| Form submissions | No cache |
+
+### Representatives Data Caching
+
+The Google Civic API data is cached server-side:
+
+```typescript
+// In-memory cache for representative lookups
+const representativeCache = new Map<string, CachedData>()
+const CACHE_TTL = 24 * 60 * 60 * 1000 // 24 hours
+
+async function getRepresentatives(zip: string) {
+  const cached = representativeCache.get(zip)
+  if (cached && Date.now() < cached.expiry) {
+    return { data: cached.data, cached: true }
+  }
+
+  const data = await fetchFromGoogleCivicAPI(zip)
+  representativeCache.set(zip, {
+    data,
+    expiry: Date.now() + CACHE_TTL,
+  })
+
+  return { data, cached: false }
+}
+```
+
+### Page Caching
+
+- **Static pages** (FAQ, Resources): Generated at build time, cached at edge
+- **Dynamic pages** (Survey results): Server-rendered on each request
+- **Admin pages**: Never cached
+
+### Cache Invalidation
+
+- **Build-time**: All static caches invalidated on new deployment
+- **Runtime**: Representative cache expires after 24 hours
+- **Manual**: Redeploy to clear all caches
+
+## Data Flow
+
+```
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│   Browser   │────▶│   Vercel    │────▶│  Supabase   │
+│             │     │   (Edge)    │     │  (Postgres) │
+└─────────────┘     └─────────────┘     └─────────────┘
+       │                   │                   │
+       │                   │                   │
+       ▼                   ▼                   ▼
+┌─────────────┐     ┌─────────────┐     ┌─────────────┐
+│  reCAPTCHA  │     │   Upstash   │     │   Stripe    │
+│  (Google)   │     │   (Redis)   │     │  (Payments) │
+└─────────────┘     └─────────────┘     └─────────────┘
+```
+
+**Request Flow:**
+
+1. Browser sends request to Vercel edge
+2. Middleware adds security headers
+3. API route validates CSRF token (if POST)
+4. Rate limiter checks Upstash Redis
+5. Handler processes request
+6. Data persisted to Supabase
+7. Response returned with request ID
 
 ## Resources
 

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Security Vulnerability
+    url: mailto:security@covidvaccineinjury.us
+    about: Report security vulnerabilities via email (do not open public issues)
+  - name: General Inquiry
+    url: https://covidvaccineinjury.us/contact
+    about: For non-technical questions, use our contact form

@@ -40,10 +40,10 @@ This document covers deployment procedures for the U.S. COVID Vaccine Injuries a
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | PostgreSQL connection string (Supabase) |
 | `PAYLOAD_SECRET` | Yes | 32+ character secret for encryption |
-| `UPSTASH_REDIS_REST_URL` | Yes* | Upstash Redis URL for rate limiting |
-| `UPSTASH_REDIS_REST_TOKEN` | Yes* | Upstash Redis token |
+| `UPSTASH_REDIS_REST_URL` | No | Upstash Redis URL for rate limiting |
+| `UPSTASH_REDIS_REST_TOKEN` | No | Upstash Redis token |
 
-*Required for production security. Rate limiting fails closed without Redis.
+*Note: Upstash Redis is recommended for production but not required. Rate limiting falls back to in-memory storage in development and fails gracefully in production.*
 
 ### Recommended Environment Variables
 
@@ -106,9 +106,9 @@ npm run payload migrate:create
 npm run payload migrate
 ```
 
-## Redis Setup (Upstash)
+## Redis Setup (Upstash) - Optional
 
-Rate limiting requires Redis in production. Without it, requests are denied.
+Redis is recommended for production rate limiting but not required. Without it, the application will log warnings but continue to function.
 
 ### Creating a Redis Instance
 
@@ -177,8 +177,8 @@ stripe listen --forward-to localhost:3000/api/donation-webhook
 - [ ] **Security**
   - [ ] `PAYLOAD_SECRET` is 32+ random characters
   - [ ] `ADMIN_API_KEY` is set (if using API auth)
-  - [ ] Upstash Redis configured for rate limiting
-  - [ ] reCAPTCHA keys configured
+  - [ ] Upstash Redis configured for rate limiting (recommended)
+  - [ ] reCAPTCHA keys configured (recommended)
 
 - [ ] **Payments**
   - [ ] Stripe keys are production keys (not test)
@@ -294,8 +294,9 @@ ANALYZE=true npm run build
 - Check for typos in variable name
 
 **"Rate limit: Upstash not configured"**
-- Add Upstash credentials to environment
-- In production, rate limiting fails closed
+- This is a warning, not an error
+- Add Upstash credentials for optimal rate limiting
+- Without Upstash, rate limiting falls back gracefully
 
 **Database connection errors**
 - Verify DATABASE_URL is correct
