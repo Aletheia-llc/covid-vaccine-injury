@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
-import Link from 'next/link'
 import { track } from '@vercel/analytics'
 import { BarChart3, ClipboardList, RefreshCw, Building2, TrendingUp, FileText, Search, Scale } from 'lucide-react'
 import Header from '../components/Header'
