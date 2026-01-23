@@ -18,10 +18,64 @@ Most endpoints are public. Protected endpoints require one of:
 
 All POST endpoints implement:
 
-- **CSRF Protection**: Origin/Referer validation
+- **CSRF Protection**: Token-based with HMAC-SHA256 signatures
 - **Rate Limiting**: Per-IP request limits (see individual endpoints)
 - **Input Sanitization**: XSS prevention on all user inputs
 - **reCAPTCHA**: Optional bot protection (when configured)
+
+### CSRF Token Flow
+
+All POST endpoints require a valid CSRF token. The flow is:
+
+1. **Fetch a CSRF token** from `/api/csrf`
+2. **Include the token** in subsequent POST requests via `x-csrf-token` header
+3. **Include credentials** to send the associated cookie
+
+```javascript
+// Step 1: Get CSRF token (also sets httpOnly cookie)
+const csrfResponse = await fetch('/api/csrf', {
+  credentials: 'include'  // Important: include cookies
+})
+const { csrfToken } = await csrfResponse.json()
+
+// Step 2: Use token in POST request
+const response = await fetch('/api/survey', {
+  method: 'POST',
+  credentials: 'include',  // Important: send cookie back
+  headers: {
+    'Content-Type': 'application/json',
+    'x-csrf-token': csrfToken  // Token in header
+  },
+  body: JSON.stringify(data)
+})
+```
+
+**Token Details:**
+- Format: `timestamp.signature` (e.g., `1705312200000.a1b2c3d4...`)
+- Expiry: 1 hour from generation
+- Cookie: `csrf_secret` (httpOnly, Secure, SameSite=Strict)
+
+**Common CSRF Errors:**
+| Error | Cause | Solution |
+|-------|-------|----------|
+| "Security validation failed" | Missing or invalid token | Fetch fresh token from `/api/csrf` |
+| "CSRF token expired" | Token older than 1 hour | Fetch new token |
+| "Invalid CSRF cookie" | Cookie missing or cleared | Ensure `credentials: 'include'` |
+
+### Response Headers
+
+All API responses include:
+
+| Header | Value | Description |
+|--------|-------|-------------|
+| `X-Request-ID` | UUID | Unique request identifier for debugging |
+| `Content-Type` | `application/json` | Response format |
+
+Rate-limited responses (429) include:
+
+| Header | Value | Description |
+|--------|-------|-------------|
+| `Retry-After` | seconds | Time until rate limit resets |
 
 ## Endpoints
 

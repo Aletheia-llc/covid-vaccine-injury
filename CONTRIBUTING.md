@@ -152,30 +152,53 @@ function SurveyForm() {
 Follow the established security pattern:
 
 ```typescript
+import { validateCsrfToken } from '@/lib/csrf'
+import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
+import { createRequestLogger } from '@/lib/logger'
+
 export async function POST(request: NextRequest) {
-  // 1. CSRF protection
-  if (!validateOrigin(request)) {
-    return csrfErrorResponse()
+  // 1. Request ID for tracing
+  const requestId = crypto.randomUUID()
+  const log = createRequestLogger({ requestId, path: '/api/endpoint', method: 'POST' })
+
+  // 2. CSRF protection (token-based)
+  const csrfValid = await validateCsrfToken(request)
+  if (!csrfValid) {
+    log.warn({ event: 'csrf_validation_failed' }, 'CSRF validation failed')
+    return NextResponse.json(
+      { error: 'Security validation failed. Please refresh and try again.' },
+      { status: 403, headers: { 'X-Request-ID': requestId } }
+    )
   }
 
-  // 2. Rate limiting
+  // 3. Rate limiting
   const clientIP = getClientIP(request)
-  const rateLimit = await checkRateLimit(`endpoint:${clientIP}`, config)
+  const rateLimit = await checkRateLimit(`endpoint:${clientIP}`, {
+    windowMs: 60 * 60 * 1000,  // 1 hour
+    maxRequests: 5
+  })
   if (!rateLimit.success) {
-    return NextResponse.json({ error: 'Too many requests' }, { status: 429 })
+    const retryAfter = Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
+    return NextResponse.json(
+      { error: 'Too many requests. Please try again later.' },
+      { status: 429, headers: { 'Retry-After': String(retryAfter) } }
+    )
   }
 
-  // 3. Parse and validate input
+  // 4. Parse and validate input
   const body = await request.json()
 
-  // 4. Sanitize user input
+  // 5. Sanitize user input
   const sanitizedData = sanitizeInput(body)
 
-  // 5. Business logic
+  // 6. Business logic
   // ...
 
-  // 6. Return response
-  return NextResponse.json({ success: true })
+  // 7. Return response with request ID
+  return NextResponse.json(
+    { success: true },
+    { headers: { 'X-Request-ID': requestId } }
+  )
 }
 ```
 

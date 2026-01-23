@@ -216,6 +216,17 @@ npm run build
 npm run start
 ```
 
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [API.md](./API.md) | REST API endpoints, authentication, CSRF flow |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | System design and component overview |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Development guidelines and code style |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Vercel deployment, environment setup |
+| [SECURITY.md](./SECURITY.md) | Security policy and vulnerability reporting |
+| [TESTING.md](./TESTING.md) | Testing strategy, coverage requirements |
+
 ## Contributing
 
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for development guidelines.
