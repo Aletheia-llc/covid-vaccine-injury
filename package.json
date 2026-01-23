@@ -13,13 +13,13 @@
     "lint": "cross-env NODE_OPTIONS=--no-deprecation next lint",
     "payload": "cross-env NODE_OPTIONS=--no-deprecation payload",
     "start": "cross-env NODE_OPTIONS=--no-deprecation next start",
-    "test": "pnpm run test:unit && pnpm run test:e2e",
+    "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "cross-env NODE_OPTIONS=--no-deprecation vitest run",
     "test:unit:watch": "cross-env NODE_OPTIONS=--no-deprecation vitest",
     "test:unit:coverage": "cross-env NODE_OPTIONS=--no-deprecation vitest run --coverage",
-    "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" pnpm exec playwright test",
-    "test:e2e:ui": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" pnpm exec playwright test --ui",
-    "test:e2e:headed": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" pnpm exec playwright test --headed",
+    "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" npx playwright test",
+    "test:e2e:ui": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" npx playwright test --ui",
+    "test:e2e:headed": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" npx playwright test --headed",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
