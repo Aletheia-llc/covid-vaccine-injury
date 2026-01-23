@@ -74,6 +74,7 @@ export interface Config {
     'form-submissions': FormSubmission;
     'survey-responses': SurveyResponse;
     subscribers: Subscriber;
+    'legal-pages': LegalPage;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -88,6 +89,7 @@ export interface Config {
     'form-submissions': FormSubmissionsSelect<false> | FormSubmissionsSelect<true>;
     'survey-responses': SurveyResponsesSelect<false> | SurveyResponsesSelect<true>;
     subscribers: SubscribersSelect<false> | SubscribersSelect<true>;
+    'legal-pages': LegalPagesSelect<false> | LegalPagesSelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
@@ -274,6 +276,75 @@ export interface Subscriber {
   createdAt: string;
 }
 /**
+ * Manage Privacy Policy and Terms of Service content
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "legal-pages".
+ */
+export interface LegalPage {
+  id: number;
+  /**
+   * Page title (e.g., "Privacy Policy" or "Terms of Service")
+   */
+  title: string;
+  /**
+   * URL slug for this page
+   */
+  slug: 'privacy' | 'terms';
+  /**
+   * Date shown as "Last Updated" on the page
+   */
+  lastUpdated: string;
+  /**
+   * Summary box shown at the top of the page
+   */
+  quickSummary?: {
+    enabled?: boolean | null;
+    items?:
+      | {
+          label: string;
+          value: string;
+          id?: string | null;
+        }[]
+      | null;
+  };
+  /**
+   * Add sections to the legal page
+   */
+  sections: {
+    title: string;
+    /**
+     * Used for table of contents links
+     */
+    anchor: string;
+    /**
+     * Section content - supports formatting, lists, tables, and links
+     */
+    content: {
+      root: {
+        type: string;
+        children: {
+          type: any;
+          version: number;
+          [k: string]: unknown;
+        }[];
+        direction: ('ltr' | 'rtl') | null;
+        format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+        indent: number;
+        version: number;
+      };
+      [k: string]: unknown;
+    };
+    id?: string | null;
+  }[];
+  /**
+   * Contact email shown on the page (e.g., privacy@covidvaccineinjury.us)
+   */
+  contactEmail?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
  * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
@@ -324,6 +395,10 @@ export interface PayloadLockedDocument {
     | ({
         relationTo: 'subscribers';
         value: number | Subscriber;
+      } | null)
+    | ({
+        relationTo: 'legal-pages';
+        value: number | LegalPage;
       } | null);
   globalSlug?: string | null;
   user: {
@@ -487,6 +562,38 @@ export interface SubscribersSelect<T extends boolean = true> {
   zip?: T;
   source?: T;
   status?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "legal-pages_select".
+ */
+export interface LegalPagesSelect<T extends boolean = true> {
+  title?: T;
+  slug?: T;
+  lastUpdated?: T;
+  quickSummary?:
+    | T
+    | {
+        enabled?: T;
+        items?:
+          | T
+          | {
+              label?: T;
+              value?: T;
+              id?: T;
+            };
+      };
+  sections?:
+    | T
+    | {
+        title?: T;
+        anchor?: T;
+        content?: T;
+        id?: T;
+      };
+  contactEmail?: T;
   updatedAt?: T;
   createdAt?: T;
 }

@@ -3,7 +3,10 @@
 import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { track } from '@vercel/analytics'
+import { executeRecaptchaAction } from '@/hooks/useRecaptcha'
 import '../styles.css'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
 
 interface SurveyData {
   q1: string
@@ -41,7 +44,6 @@ export default function SurveyPage() {
   })
 
   const [scrollProgress, setScrollProgress] = useState(0)
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const surveyStartedRef = useRef(false)
 
   useEffect(() => {
@@ -158,10 +160,13 @@ export default function SurveyPage() {
     setError('')
 
     try {
+      // Get reCAPTCHA token (returns null if not configured)
+      const recaptchaToken = await executeRecaptchaAction('SURVEY')
+
       const response = await fetch('/api/survey', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(surveyData)
+        body: JSON.stringify({ ...surveyData, recaptchaToken })
       })
 
       if (!response.ok) {
@@ -204,34 +209,7 @@ export default function SurveyPage() {
   if (submitted) {
     return (
       <>
-        <nav className="nav">
-          <div className="nav-inner">
-            <Link href="/" className="nav-logo">
-              <span>U.S. Covid Vaccine Injuries</span>
-            </Link>
-            <button
-              className={`nav-toggle ${mobileNavOpen ? 'active' : ''}`}
-              onClick={() => setMobileNavOpen(!mobileNavOpen)}
-              aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
-              aria-expanded={mobileNavOpen}
-            >
-              <span></span>
-              <span></span>
-              <span></span>
-            </button>
-            <ul className={`nav-links ${mobileNavOpen ? 'open' : ''}`}>
-              <li><Link href="/#funnel" onClick={() => setMobileNavOpen(false)}>The Gap</Link></li>
-              <li><Link href="/#comparison" onClick={() => setMobileNavOpen(false)}>Programs</Link></li>
-              <li><Link href="/faq" onClick={() => setMobileNavOpen(false)}>FAQ</Link></li>
-              <li><Link href="/resources" onClick={() => setMobileNavOpen(false)}>Data</Link></li>
-              <li><Link href="/survey" className="active" onClick={() => setMobileNavOpen(false)}>Survey</Link></li>
-              <li className="mobile-only">
-                <Link href="/#action" className="nav-cta mobile" onClick={() => setMobileNavOpen(false)}>Take Action</Link>
-              </li>
-            </ul>
-            <Link href="/#action" className="nav-cta">Take Action</Link>
-          </div>
-        </nav>
+        <Header activePage="survey" />
         <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
 
         <main className="survey-success-page">
@@ -246,53 +224,14 @@ export default function SurveyPage() {
           </div>
         </main>
 
-        <footer className="footer">
-          <div className="footer-logo">
-            <span>U.S. Covid Vaccine Injuries</span>
-          </div>
-          <p className="footer-text">Advocating for fair treatment of those impacted by Covid-19 vaccine injuries.</p>
-          <div className="footer-links">
-            <Link href="/">Home</Link>
-            <Link href="/faq">FAQ</Link>
-            <Link href="/resources">Resources</Link>
-            <Link href="/privacy">Privacy Policy</Link>
-            <Link href="/terms">Terms of Service</Link>
-          </div>
-        </footer>
+        <Footer />
       </>
     )
   }
 
   return (
     <>
-      <nav className="nav">
-        <div className="nav-inner">
-          <Link href="/" className="nav-logo">
-            <span>U.S. Covid Vaccine Injuries</span>
-          </Link>
-          <button
-            className={`nav-toggle ${mobileNavOpen ? 'active' : ''}`}
-            onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileNavOpen}
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
-          <ul className={`nav-links ${mobileNavOpen ? 'open' : ''}`}>
-            <li><Link href="/#funnel" onClick={() => setMobileNavOpen(false)}>The Gap</Link></li>
-            <li><Link href="/#comparison" onClick={() => setMobileNavOpen(false)}>Programs</Link></li>
-            <li><Link href="/faq" onClick={() => setMobileNavOpen(false)}>FAQ</Link></li>
-            <li><Link href="/resources" onClick={() => setMobileNavOpen(false)}>Data</Link></li>
-            <li><Link href="/survey" className="active" onClick={() => setMobileNavOpen(false)}>Survey</Link></li>
-            <li className="mobile-only">
-              <Link href="/#action" className="nav-cta mobile" onClick={() => setMobileNavOpen(false)}>Take Action</Link>
-            </li>
-          </ul>
-          <Link href="/#action" className="nav-cta">Take Action</Link>
-        </div>
-      </nav>
+      <Header activePage="survey" />
       <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
 
       <main className="survey-page">

@@ -30,9 +30,111 @@ interface GameState {
 
 interface CICPRouletteProps {
   compact?: boolean;
+  onClose?: () => void;
 }
 
-const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false }) => {
+// Sound effects - uses audio files from /public/sounds/
+// Falls back to Web Audio API synthesis if files don't exist
+const SPIN_DURATION = 2000; // 2 seconds to match animation
+
+const createAudioContext = () => {
+  if (typeof window === 'undefined') return null;
+  return new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+};
+
+const playSound = (soundKey: 'click' | 'spin' | 'denied' | 'approved') => {
+  if (typeof window === 'undefined') return;
+
+  const audioFile = `/sounds/${soundKey}.mp3`;
+  const audio = new Audio(audioFile);
+  audio.volume = 0.5;
+
+  // For spin sound, fade out and stop at SPIN_DURATION
+  if (soundKey === 'spin') {
+    audio.play().then(() => {
+      // Fade out near the end
+      setTimeout(() => {
+        const fadeOut = setInterval(() => {
+          if (audio.volume > 0.05) {
+            audio.volume = Math.max(0, audio.volume - 0.1);
+          } else {
+            clearInterval(fadeOut);
+            audio.pause();
+            audio.currentTime = 0;
+          }
+        }, 50);
+      }, SPIN_DURATION - 300); // Start fade 300ms before end
+    }).catch(() => {
+      // Fall back to synthesized sound
+      playSynthesizedSound(soundKey);
+    });
+    return;
+  }
+
+  // For other sounds, just play normally
+  audio.play().catch(() => {
+    playSynthesizedSound(soundKey);
+  });
+};
+
+// Fallback synthesized sounds
+const playSynthesizedSound = (soundKey: 'click' | 'spin' | 'denied' | 'approved') => {
+  try {
+    const ctx = createAudioContext();
+    if (!ctx) return;
+
+    const oscillator = ctx.createOscillator();
+    const gainNode = ctx.createGain();
+    oscillator.connect(gainNode);
+    gainNode.connect(ctx.destination);
+
+    switch (soundKey) {
+      case 'click':
+        oscillator.frequency.setValueAtTime(800, ctx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(400, ctx.currentTime + 0.05);
+        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.05);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.05);
+        break;
+      case 'spin':
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(120, ctx.currentTime);
+        oscillator.frequency.linearRampToValueAtTime(300, ctx.currentTime + 1);
+        oscillator.frequency.linearRampToValueAtTime(80, ctx.currentTime + 2);
+        gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 2);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 2);
+        break;
+      case 'denied':
+        oscillator.type = 'square';
+        oscillator.frequency.setValueAtTime(200, ctx.currentTime);
+        oscillator.frequency.setValueAtTime(150, ctx.currentTime + 0.1);
+        oscillator.frequency.setValueAtTime(100, ctx.currentTime + 0.2);
+        gainNode.gain.setValueAtTime(0.2, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.4);
+        break;
+      case 'approved':
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(523, ctx.currentTime);
+        oscillator.frequency.setValueAtTime(659, ctx.currentTime + 0.1);
+        oscillator.frequency.setValueAtTime(784, ctx.currentTime + 0.2);
+        oscillator.frequency.setValueAtTime(1047, ctx.currentTime + 0.3);
+        gainNode.gain.setValueAtTime(0.3, ctx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.5);
+        oscillator.start(ctx.currentTime);
+        oscillator.stop(ctx.currentTime + 0.5);
+        break;
+    }
+  } catch {
+    // Silently fail
+  }
+};
+
+const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false, onClose }) => {
   const [gameState, setGameState] = useState<GameState>({
     mode: 'cicp',
     attempts: 0,
@@ -148,11 +250,17 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false }) => {
   const pullTrigger = useCallback(() => {
     if (gameState.isSpinning) return;
 
+    // Play click sound
+    playSound('click');
+
     setGameState(prev => ({
       ...prev,
       isSpinning: true,
       showResult: false,
     }));
+
+    // Play spin sound after a brief delay
+    setTimeout(() => playSound('spin'), 100);
 
     // Determine result
     const currentConfig = CONFIG[gameState.mode];
@@ -181,6 +289,9 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false }) => {
     }));
 
     setTimeout(() => {
+      // Play result sound
+      playSound(won ? 'approved' : 'denied');
+
       setGameState(prev => ({
         ...prev,
         attempts: prev.attempts + 1,
@@ -199,11 +310,17 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false }) => {
   const rapidFire = useCallback(() => {
     if (gameState.isSpinning) return;
 
+    // Play click sound
+    playSound('click');
+
     setGameState(prev => ({
       ...prev,
       isSpinning: true,
       showResult: false,
     }));
+
+    // Play spin sound
+    setTimeout(() => playSound('spin'), 100);
 
     const currentConfig = CONFIG[gameState.mode];
     let rapidWins = 0;
@@ -222,6 +339,9 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false }) => {
     }));
 
     setTimeout(() => {
+      // Play result sound
+      playSound(rapidWins > 0 ? 'approved' : 'denied');
+
       setGameState(prev => ({
         ...prev,
         attempts: prev.attempts + 50,
@@ -338,7 +458,7 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false }) => {
 
   return (
     <>
-      <canvas ref={canvasRef} className="confetti-canvas" />
+      {!compact && <canvas ref={canvasRef} className="confetti-canvas" />}
       <div className={`cicp-roulette-v2 ${gameState.mode === 'vicp' ? 'vicp-mode' : ''} ${compact ? 'compact' : ''}`}>
         <style jsx>{`
           .confetti-canvas {
@@ -759,10 +879,13 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false }) => {
             line-height: 1.5;
           }
 
-          .cta-btn {
+          .cta-btn,
+          a.cta-btn,
+          a.cta-btn:visited,
+          a.cta-btn:link {
             display: inline-block;
             background: linear-gradient(135deg, #c4a052 0%, #a08042 100%);
-            color: #0d1b2a;
+            color: #0d1b2a !important;
             padding: 12px 32px;
             border-radius: 100px;
             font-size: 14px;
@@ -773,9 +896,11 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false }) => {
             transition: all 0.3s ease;
           }
 
-          .cta-btn:hover {
+          .cta-btn:hover,
+          a.cta-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 8px 24px rgba(196, 160, 82, 0.3);
+            color: #0d1b2a !important;
           }
 
           @media (max-width: 480px) {
@@ -1078,7 +1203,26 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false }) => {
             COVID vaccine injuries deserve the same fair treatment as other vaccines.
             Help us transfer claims from CICP to VICP.
           </p>
-          <Link href="/#action" className="cta-btn">Take Action</Link>
+          <Link
+            href="/#action"
+            className="cta-btn"
+            onClick={() => {
+              playSound('click');
+              if (onClose) onClose();
+            }}
+            style={{
+              display: 'inline-block',
+              background: 'linear-gradient(135deg, #c4a052 0%, #a08042 100%)',
+              color: '#0d1b2a',
+              padding: compact ? '8px 20px' : '12px 32px',
+              borderRadius: '100px',
+              fontSize: compact ? '11px' : '14px',
+              fontWeight: 700,
+              textDecoration: 'none',
+              textTransform: 'uppercase',
+              letterSpacing: '1px',
+            }}
+          >Take Action</Link>
         </div>
       </div>
     </>

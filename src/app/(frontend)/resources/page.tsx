@@ -5,13 +5,13 @@ import ResourcesClient from './ResourcesClient'
 // Revalidate every 60 seconds so CMS changes appear quickly
 export const revalidate = 60
 
-// Map CMS categories to display categories
+// Map CMS categories to display categories (icon names map to Lucide components in ResourcesClient)
 const categoryMap: Record<string, { label: string; icon: string }> = {
-  'cicp-stats': { label: 'CICP Data', icon: '📊' },
-  'vicp-stats': { label: 'VICP Data', icon: '📈' },
-  'prep-act': { label: 'Regulatory', icon: '📜' },
-  'gao': { label: 'Oversight', icon: '🔍' },
-  'legislation': { label: 'Legal', icon: '⚖️' },
+  'cicp-stats': { label: 'CICP Data', icon: 'bar-chart' },
+  'vicp-stats': { label: 'VICP Data', icon: 'trending-up' },
+  'prep-act': { label: 'Regulatory', icon: 'file-text' },
+  'gao': { label: 'Oversight', icon: 'search' },
+  'legislation': { label: 'Legal', icon: 'scale' },
 }
 
 export default async function ResourcesPage() {
@@ -24,7 +24,7 @@ export default async function ResourcesPage() {
   })
 
   const resources = resourcesData.docs.map((doc) => {
-    const catInfo = categoryMap[doc.category] || { label: doc.category, icon: '📄' }
+    const catInfo = categoryMap[doc.category] || { label: doc.category, icon: 'file-text' }
 
     // Determine program based on category
     let program = 'Both'

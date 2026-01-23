@@ -4,6 +4,8 @@ import config from '@/payload.config'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { validateOrigin, csrfErrorResponse } from '@/lib/csrf'
 import { sanitizeName, sanitizeEmail, sanitizePhone, sanitizeZip } from '@/lib/sanitize'
+import { verifyRecaptchaTokenSimple } from '@/lib/recaptcha'
+import { log } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   // CSRF protection: validate request origin
@@ -27,6 +29,20 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+
+    // Verify reCAPTCHA token (if configured)
+    const recaptchaToken = body.recaptchaToken
+    if (recaptchaToken) {
+      const recaptchaResult = await verifyRecaptchaTokenSimple(recaptchaToken)
+      if (!recaptchaResult.success) {
+        log.security('subscribe_recaptcha_failed', { error: recaptchaResult.error })
+        return NextResponse.json(
+          { error: 'Security verification failed. Please try again.' },
+          { status: 400 }
+        )
+      }
+    }
+
     const { name: rawName, email: rawEmail, phone: rawPhone, zip: rawZip } = body
 
     // Sanitize all input
@@ -97,7 +113,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true, message: 'Thank you for subscribing!' })
   } catch (error) {
-    console.error('Subscription error:', error)
+    log.failure('subscribe', error)
     return NextResponse.json({ error: 'Failed to subscribe. Please try again.' }, { status: 500 })
   }
 }

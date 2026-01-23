@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { validateOrigin, csrfErrorResponse } from '@/lib/csrf'
 import { sanitizeName, sanitizeEmail, sanitizeComment } from '@/lib/sanitize'
+import { log } from '@/lib/logger'
 
 type SubjectType = 'general' | 'story' | 'media' | 'legislative' | 'other'
 
@@ -67,7 +68,7 @@ export async function POST(request: Request) {
 
     return NextResponse.redirect(new URL('/?success=true', request.url))
   } catch (error) {
-    console.error('Form submission error:', error)
+    log.failure('contact_form_submission', error)
     return NextResponse.redirect(new URL('/?error=server-error', request.url))
   }
 }

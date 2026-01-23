@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { track } from '@vercel/analytics'
+import { Building2, AlertTriangle, FileText, RefreshCw, HelpCircle } from 'lucide-react'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
 
 interface FAQItem {
   question: string
@@ -11,7 +14,7 @@ interface FAQItem {
 
 interface FAQCategory {
   id: string
-  icon: string
+  icon: React.ReactNode
   iconClass: string
   title: string
   subtitle: string
@@ -40,7 +43,6 @@ function FAQAccordion({ question, answer, isOpen, onClick }: { question: string;
 
 export default function FAQPage() {
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({})
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   // Handle hash navigation
   useEffect(() => {
@@ -70,7 +72,7 @@ export default function FAQPage() {
   const faqCategories: FAQCategory[] = [
     {
       id: 'vicp',
-      icon: '🏛️',
+      icon: <Building2 size={28} />,
       iconClass: 'vicp',
       title: 'Understanding VICP',
       subtitle: 'The Vaccine Injury Compensation Program',
@@ -204,7 +206,7 @@ export default function FAQPage() {
     },
     {
       id: 'cicp',
-      icon: '⚠️',
+      icon: <AlertTriangle size={28} />,
       iconClass: 'cicp',
       title: 'Understanding CICP',
       subtitle: 'The Countermeasures Injury Compensation Program',
@@ -308,7 +310,7 @@ export default function FAQPage() {
     },
     {
       id: 'prep-act',
-      icon: '📜',
+      icon: <FileText size={28} />,
       iconClass: 'prep',
       title: 'The PREP Act & COVID-19',
       subtitle: 'Why COVID vaccines are handled differently',
@@ -394,7 +396,7 @@ export default function FAQPage() {
     },
     {
       id: 'reform',
-      icon: '🔄',
+      icon: <RefreshCw size={28} />,
       iconClass: 'reform',
       title: 'The Case for Reform',
       subtitle: 'Why adding COVID vaccines to VICP makes sense',
@@ -500,41 +502,12 @@ export default function FAQPage() {
   return (
     <div>
       {/* Navigation */}
-      <nav className="nav">
-        <div className="nav-inner">
-          <Link href="/" className="nav-logo">
-            <span>⚖️</span>
-            <span>U.S. Covid Vaccine Injuries</span>
-          </Link>
-          <button
-            className={`nav-toggle ${mobileNavOpen ? 'active' : ''}`}
-            onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileNavOpen}
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
-          <ul className={`nav-links ${mobileNavOpen ? 'open' : ''}`}>
-            <li><Link href="/#funnel" onClick={() => setMobileNavOpen(false)}>The Gap</Link></li>
-            <li><Link href="/#comparison" onClick={() => setMobileNavOpen(false)}>Compare Programs</Link></li>
-            <li><Link href="/#trustfund" onClick={() => setMobileNavOpen(false)}>Trust Fund</Link></li>
-            <li><Link href="/faq" className="active" onClick={() => setMobileNavOpen(false)}>FAQ</Link></li>
-            <li><Link href="/resources" onClick={() => setMobileNavOpen(false)}>Data</Link></li>
-            <li><Link href="/survey" onClick={() => setMobileNavOpen(false)}>Survey</Link></li>
-            <li className="mobile-only">
-              <Link href="/#action" className="nav-cta mobile" onClick={() => setMobileNavOpen(false)}>Contact Congress</Link>
-            </li>
-          </ul>
-          <Link href="/#action" className="nav-cta">Contact Congress →</Link>
-        </div>
-      </nav>
+      <Header activePage="faq" />
 
       {/* Hero */}
       <section className="hero" style={{ minHeight: 'auto', paddingTop: '140px', paddingBottom: '80px' }}>
         <div className="hero-inner" style={{ maxWidth: '900px' }}>
-          <div className="hero-badge">❓ Frequently Asked Questions</div>
+          <div className="hero-badge"><HelpCircle size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />Frequently Asked Questions</div>
           <h1 className="hero-title" style={{ fontSize: 'clamp(36px, 5vw, 56px)', display: 'block' }}>
             Understanding Vaccine Injury Compensation
           </h1>
@@ -606,21 +579,7 @@ export default function FAQPage() {
       </section>
 
       {/* Footer */}
-      <footer className="footer">
-        <div className="footer-logo">
-          <span>⚖️</span>
-          <span>U.S. Covid Vaccine Injuries</span>
-        </div>
-        <p className="footer-text">Advocating for consistent compensation mechanisms for all vaccine-injured Americans.</p>
-        <div className="footer-links">
-          <Link href="/">Home</Link>
-          <Link href="/faq">FAQ</Link>
-          <Link href="/resources">Data Resources</Link>
-          <Link href="/#action">Take Action</Link>
-          <Link href="/privacy">Privacy</Link>
-          <Link href="/terms">Terms</Link>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

@@ -1,31 +1,16 @@
+'use client'
+
 import Link from 'next/link'
 import '../styles.css'
-
-export const metadata = {
-  title: 'Privacy Policy | U.S. Covid Vaccine Injuries',
-  description: 'Privacy Policy for U.S. Covid Vaccine Injuries website - how we collect, use, and protect your information.',
-}
+import Header from '../components/Header'
+import Footer from '../components/Footer'
 
 export default function PrivacyPolicyPage() {
   const lastUpdated = 'January 18, 2026'
 
   return (
     <div>
-      <nav className="nav">
-        <div className="nav-inner">
-          <Link href="/" className="nav-logo">
-            <span>U.S. Covid Vaccine Injuries</span>
-          </Link>
-          <ul className="nav-links">
-            <li><Link href="/#funnel">The Gap</Link></li>
-            <li><Link href="/#comparison">Programs</Link></li>
-            <li><Link href="/faq">FAQ</Link></li>
-            <li><Link href="/resources">Data</Link></li>
-            <li><Link href="/survey">Survey</Link></li>
-          </ul>
-          <Link href="/#action" className="nav-cta">Contact Congress</Link>
-        </div>
-      </nav>
+      <Header />
 
       <main className="legal-page">
         <div className="legal-container">
@@ -654,19 +639,7 @@ export default function PrivacyPolicyPage() {
         </div>
       </main>
 
-      <footer className="footer">
-        <div className="footer-logo">
-          <span>U.S. Covid Vaccine Injuries</span>
-        </div>
-        <p className="footer-text">Advocating for fair compensation for all vaccine-injured Americans.</p>
-        <div className="footer-links">
-          <Link href="/">Home</Link>
-          <Link href="/faq">FAQ</Link>
-          <Link href="/resources">Resources</Link>
-          <Link href="/privacy">Privacy Policy</Link>
-          <Link href="/terms">Terms of Service</Link>
-        </div>
-      </footer>
+      <Footer />
     </div>
   )
 }

@@ -13,6 +13,8 @@ const eslintConfig = [
   ...compat.extends('next/core-web-vitals', 'next/typescript'),
   {
     rules: {
+      // Prevent console.log in production - use logger instead
+      'no-console': ['error', { allow: ['warn', 'error'] }],
       '@typescript-eslint/ban-ts-comment': 'warn',
       '@typescript-eslint/no-empty-object-type': 'warn',
       '@typescript-eslint/no-explicit-any': 'warn',
@@ -31,7 +33,7 @@ const eslintConfig = [
     },
   },
   {
-    ignores: ['.next/'],
+    ignores: ['.next/', 'src/seed.ts'],
   },
 ]
 

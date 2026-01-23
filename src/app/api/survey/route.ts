@@ -4,6 +4,8 @@ import config from '@/payload.config'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { validateOrigin, csrfErrorResponse } from '@/lib/csrf'
 import { sanitizeEmail, sanitizeZip, sanitizeComment } from '@/lib/sanitize'
+import { verifyRecaptchaTokenSimple } from '@/lib/recaptcha'
+import { log } from '@/lib/logger'
 
 export async function POST(request: NextRequest) {
   // CSRF protection: validate request origin
@@ -27,6 +29,19 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
+
+    // Verify reCAPTCHA token (if configured)
+    const recaptchaToken = body.recaptchaToken
+    if (recaptchaToken) {
+      const recaptchaResult = await verifyRecaptchaTokenSimple(recaptchaToken)
+      if (!recaptchaResult.success) {
+        log.security('survey_recaptcha_failed', { error: recaptchaResult.error })
+        return NextResponse.json(
+          { error: 'Security verification failed. Please try again.' },
+          { status: 400 }
+        )
+      }
+    }
 
     const {
       q1,
@@ -104,7 +119,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Survey submission error:', error)
+    log.failure('survey_submission', error)
     return NextResponse.json(
       { error: 'Failed to submit survey. Please try again.' },
       { status: 500 }

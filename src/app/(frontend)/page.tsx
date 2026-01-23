@@ -4,7 +4,26 @@ import { useEffect, useState, useRef } from 'react'
 import Link from 'next/link'
 import { track } from '@vercel/analytics'
 import { useSiteAnimations } from '@/hooks/useAnimations'
+import { executeRecaptchaAction } from '@/hooks/useRecaptcha'
 import CICPRoulette from './components/CICPRoulette'
+import Header from './components/Header'
+import Footer from './components/Footer'
+import {
+  Scale,
+  BarChart3,
+  DollarSign,
+  ClipboardList,
+  PieChart,
+  Building2,
+  AlertTriangle,
+  FileText,
+  RefreshCw,
+  Phone,
+  Mail,
+  Globe,
+  Copy,
+  UserPen
+} from 'lucide-react'
 
 export default function HomePage() {
   // Initialize site animations (hero, scroll, funnel interactions)
@@ -33,9 +52,9 @@ export default function HomePage() {
   const [subscribeForm, setSubscribeForm] = useState({ name: '', email: '', phone: '', zip: '' })
   const [subscribeLoading, setSubscribeLoading] = useState(false)
   const [subscribeMessage, setSubscribeMessage] = useState({ type: '', text: '' })
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [calcTracked, setCalcTracked] = useState({ main: false, personal: false })
+    const [calcTracked, setCalcTracked] = useState({ main: false, personal: false })
   const [rouletteOpen, setRouletteOpen] = useState(false)
+  const [rouletteTriggered, setRouletteTriggered] = useState(false)
   const heroRef = useRef<HTMLElement>(null)
 
   // Scroll progress
@@ -49,6 +68,25 @@ export default function HomePage() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Trigger roulette popup at 30% scroll (only once per session)
+  useEffect(() => {
+    if (scrollProgress >= 30 && !rouletteTriggered && !rouletteOpen) {
+      // Check if user has already dismissed it this session
+      const dismissed = sessionStorage.getItem('roulette_dismissed')
+      if (!dismissed) {
+        setRouletteOpen(true)
+        setRouletteTriggered(true)
+        track('roulette_auto_opened', { scroll_percent: Math.round(scrollProgress) })
+      }
+    }
+  }, [scrollProgress, rouletteTriggered, rouletteOpen])
+
+  // Close roulette handler
+  const closeRoulette = () => {
+    setRouletteOpen(false)
+    sessionStorage.setItem('roulette_dismissed', 'true')
+  }
 
   // Animated counters
   useEffect(() => {
@@ -171,10 +209,13 @@ export default function HomePage() {
     setSubscribeMessage({ type: '', text: '' })
 
     try {
+      // Get reCAPTCHA token (returns null if not configured)
+      const recaptchaToken = await executeRecaptchaAction('SUBSCRIBE')
+
       const response = await fetch('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(subscribeForm),
+        body: JSON.stringify({ ...subscribeForm, recaptchaToken }),
       })
 
       const data = await response.json()
@@ -200,43 +241,13 @@ export default function HomePage() {
       <div className="scroll-progress" style={{ width: `${scrollProgress}%` }} />
 
       {/* Navigation */}
-      <nav className="nav">
-        <div className="nav-inner">
-          <Link href="/" className="nav-logo">
-            <span>U.S. Covid Vaccine Injuries</span>
-          </Link>
-          <button
-            className={`nav-toggle ${mobileNavOpen ? 'active' : ''}`}
-            onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileNavOpen}
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
-          <ul className={`nav-links ${mobileNavOpen ? 'open' : ''}`}>
-            <li><a href="#funnel" onClick={() => setMobileNavOpen(false)}>The Gap</a></li>
-            <li><a href="#comparison" onClick={() => setMobileNavOpen(false)}>Compare Programs</a></li>
-            <li><a href="#outlier" onClick={() => setMobileNavOpen(false)}>True Cost</a></li>
-            <li><a href="#trustfund" onClick={() => setMobileNavOpen(false)}>Trust Fund</a></li>
-            <li><Link href="/faq" onClick={() => setMobileNavOpen(false)}>FAQ</Link></li>
-            <li><Link href="/resources" onClick={() => setMobileNavOpen(false)}>Data</Link></li>
-            <li><Link href="/survey" onClick={() => setMobileNavOpen(false)}>Survey</Link></li>
-            <li><button className="nav-link-btn" onClick={() => { setMobileNavOpen(false); setRouletteOpen(true); track('roulette_opened', { location: 'nav' }) }}>🎰 Roulette</button></li>
-            <li className="mobile-only">
-              <a href="#action" className="nav-cta mobile" onClick={() => { setMobileNavOpen(false); track('cta_clicked', { location: 'nav_mobile', type: 'contact_congress' }) }}>Contact Congress</a>
-            </li>
-          </ul>
-          <a href="#action" className="nav-cta" onClick={() => track('cta_clicked', { location: 'nav', type: 'contact_congress' })}>Contact Congress</a>
-        </div>
-      </nav>
+      <Header activePage="home" onRouletteOpen={() => setRouletteOpen(true)} />
 
       {/* Hero */}
       <section className="hero" ref={heroRef}>
         <div className="hero-inner">
           <div className="hero-badge">
-            <span>⚖️</span> The Compensation Gap
+            <Scale size={18} /> The Compensation Gap
           </div>
           <h1 className="hero-title">
             <span className="hero-line line-1">14,046 Claims Filed.</span>
@@ -268,10 +279,10 @@ export default function HomePage() {
 
           <div className="hero-ctas">
             <a href="#funnel" className="hero-btn primary" onClick={() => track('cta_clicked', { location: 'hero', type: 'see_data' })}>
-              📊 See the Data
+              <BarChart3 size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />See the Data
             </a>
             <a href="#action" className="hero-btn secondary" onClick={() => track('cta_clicked', { location: 'hero', type: 'take_action' })}>
-              📢 Take Action
+              <Scale size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />Take Action
             </a>
           </div>
         </div>
@@ -459,7 +470,7 @@ export default function HomePage() {
           </div>
 
           <div className="reality-callout">
-            <h3>⚠️ Without the Outlier</h3>
+            <h3><AlertTriangle size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />Without the Outlier</h3>
             <p>Remove that single $5.94M payment and the typical CICP compensation becomes clear. Here&apos;s what most injured Americans can actually expect:</p>
             <div className="reality-stats">
               <div className="reality-stat-card cicp">
@@ -683,17 +694,17 @@ export default function HomePage() {
 
               <div className="calculator-results">
                 <div className="calc-result-card">
-                  <div className="icon">📋</div>
+                  <div className="icon"><ClipboardList size={32} /></div>
                   <div className="number">{approvedClaims.toLocaleString()}</div>
                   <div className="label">Estimated Approved Claims</div>
                 </div>
                 <div className="calc-result-card highlight">
-                  <div className="icon">💰</div>
+                  <div className="icon"><DollarSign size={32} /></div>
                   <div className="number">{formatCurrency(totalCost)}</div>
                   <div className="label">Estimated Total Cost</div>
                 </div>
                 <div className="calc-result-card">
-                  <div className="icon">📊</div>
+                  <div className="icon"><PieChart size={32} /></div>
                   <div className="number">{percentOfFund.toFixed(0)}%</div>
                   <div className="label">% of Trust Fund</div>
                 </div>
@@ -741,7 +752,7 @@ export default function HomePage() {
             </div>
 
             <div className="appropriation-section">
-              <h4>🏛️ What If Congress Appropriates Additional Funds?</h4>
+              <h4><Building2 size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />What If Congress Appropriates Additional Funds?</h4>
               <p>Congress could inject liquidity into the VICP Trust Fund to ensure stability. Adjust the slider to see the impact.</p>
 
               <div className="appropriation-slider-container">
@@ -826,7 +837,7 @@ export default function HomePage() {
                     <div key={index} className={`rep-card ${getPartyClass(rep.party)}`}>
                       <div className="rep-card-header">
                         <div className="rep-photo-placeholder">
-                          {rep.office.includes('Senator') ? '🏛️' : '🏠'}
+                          <UserPen size={24} />
                         </div>
                         <div className="rep-info">
                           <h5>{rep.name}</h5>
@@ -839,17 +850,17 @@ export default function HomePage() {
                       <div className="rep-contact">
                         {rep.phone && (
                           <a href={`tel:${rep.phone}`} className="rep-contact-btn phone">
-                            📞 {rep.phone}
+                            <Phone size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />{rep.phone}
                           </a>
                         )}
                         {rep.contactForm && (
                           <a href={rep.contactForm} target="_blank" rel="noopener noreferrer" className="rep-contact-btn email">
-                            ✉️ Send Message
+                            <Mail size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />Send Message
                           </a>
                         )}
                         {rep.website && (
                           <a href={rep.website} target="_blank" rel="noopener noreferrer" className="rep-contact-btn website">
-                            🌐 Website
+                            <Globe size={14} style={{ marginRight: '4px', verticalAlign: 'middle' }} />Website
                           </a>
                         )}
                       </div>
@@ -858,7 +869,7 @@ export default function HomePage() {
                 </div>
 
                 <div className="message-template">
-                  <h4>📝 Sample Message</h4>
+                  <h4><FileText size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />Sample Message</h4>
                   <div className="message-box">
                     <p>Dear [Representative/Senator],</p>
                     <p>I am writing to urge you to support legislation that would add COVID-19 vaccines to the National Vaccine Injury Compensation Program (VICP).</p>
@@ -877,7 +888,7 @@ export default function HomePage() {
                       setTimeout(() => btn.classList.remove('copied'), 2000)
                     }}
                   >
-                    📋 Copy Message
+                    <Copy size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />Copy Message
                   </button>
                 </div>
               </div>
@@ -907,22 +918,22 @@ export default function HomePage() {
 
           <div className="faq-preview-grid">
             <Link href="/faq#vicp" className="faq-preview-card">
-              <div className="icon">🏛️</div>
+              <div className="icon"><Building2 size={28} /></div>
               <h4>What is VICP?</h4>
               <p>The Vaccine Injury Compensation Program since 1988</p>
             </Link>
             <Link href="/faq#cicp" className="faq-preview-card">
-              <div className="icon">⚠️</div>
+              <div className="icon"><AlertTriangle size={28} /></div>
               <h4>What is CICP?</h4>
               <p>The Countermeasures Injury Compensation Program</p>
             </Link>
             <Link href="/faq#prep-act" className="faq-preview-card">
-              <div className="icon">📜</div>
+              <div className="icon"><FileText size={28} /></div>
               <h4>What is the PREP Act?</h4>
               <p>Why COVID vaccines are handled differently</p>
             </Link>
             <Link href="/faq#reform" className="faq-preview-card">
-              <div className="icon">🔄</div>
+              <div className="icon"><RefreshCw size={28} /></div>
               <h4>Why Add to VICP?</h4>
               <p>The case for covering COVID vaccines under VICP</p>
             </Link>
@@ -996,34 +1007,16 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <footer className="footer">
-        <div className="footer-logo">
-          <span>⚖️</span>
-          <span>U.S. Covid Vaccine Injuries</span>
-        </div>
-        <p className="footer-text" style={{ fontSize: '13px', maxWidth: '800px', margin: '0 auto 12px' }}>
-          <strong>Data Sources:</strong> CICP median ($4,132) calculated from <a href="https://www.hrsa.gov/cicp/cicp-data/table-4">HRSA Table 4</a> (Dec 2025, n=42 COVID claims).
-          VICP average ($450K) from <a href="https://www.hrsa.gov/vaccine-compensation/data">HRSA VICP Statistics</a> (2006-2020).
-          Additional data from GAO-25-107368 and CRS R46982.
-        </p>
-        <p className="footer-text">Advocating for fair compensation for all vaccine-injured Americans.</p>
-        <div className="footer-links">
-          <Link href="/faq">FAQ</Link>
-          <Link href="/resources">Data Resources</Link>
-          <a href="#action">Take Action</a>
-          <Link href="/privacy">Privacy Policy</Link>
-          <Link href="/terms">Terms of Service</Link>
-        </div>
-      </footer>
+      <Footer showDataSources />
 
       {/* CICP Roulette Modal */}
       {rouletteOpen && (
-        <div className="modal-overlay" onClick={() => setRouletteOpen(false)}>
+        <div className="modal-overlay" onClick={closeRoulette}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={() => setRouletteOpen(false)} aria-label="Close modal">
+            <button className="modal-close" onClick={closeRoulette} aria-label="Close modal">
               ✕
             </button>
-            <CICPRoulette compact />
+            <CICPRoulette compact onClose={closeRoulette} />
           </div>
         </div>
       )}

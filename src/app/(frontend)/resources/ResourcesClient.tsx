@@ -3,6 +3,19 @@
 import React, { useState, useMemo } from 'react'
 import Link from 'next/link'
 import { track } from '@vercel/analytics'
+import { BarChart3, ClipboardList, RefreshCw, Building2, TrendingUp, FileText, Search, Scale } from 'lucide-react'
+import Header from '../components/Header'
+import Footer from '../components/Footer'
+
+// Map icon names to Lucide components
+const iconMap: Record<string, React.ReactNode> = {
+  'bar-chart': <BarChart3 size={16} />,
+  'trending-up': <TrendingUp size={16} />,
+  'file-text': <FileText size={16} />,
+  'search': <Search size={16} />,
+  'scale': <Scale size={16} />,
+  'clipboard': <ClipboardList size={16} />,
+}
 
 interface Resource {
   category: string
@@ -39,7 +52,6 @@ export default function ResourcesClient({ resources, counts }: ResourcesClientPr
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [sortField, setSortField] = useState<SortField>('category')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
-  const [mobileNavOpen, setMobileNavOpen] = useState(false)
 
   // Get unique categories for filter dropdown
   const categories = useMemo(() => {
@@ -95,41 +107,12 @@ export default function ResourcesClient({ resources, counts }: ResourcesClientPr
   return (
     <>
       {/* Navigation */}
-      <nav className="nav">
-        <div className="nav-inner">
-          <Link href="/" className="nav-logo">
-            <span>⚖️</span>
-            <span>U.S. Covid Vaccine Injuries</span>
-          </Link>
-          <button
-            className={`nav-toggle ${mobileNavOpen ? 'active' : ''}`}
-            onClick={() => setMobileNavOpen(!mobileNavOpen)}
-            aria-label={mobileNavOpen ? 'Close menu' : 'Open menu'}
-            aria-expanded={mobileNavOpen}
-          >
-            <span></span>
-            <span></span>
-            <span></span>
-          </button>
-          <ul className={`nav-links ${mobileNavOpen ? 'open' : ''}`}>
-            <li><Link href="/#funnel" onClick={() => setMobileNavOpen(false)}>The Gap</Link></li>
-            <li><Link href="/#comparison" onClick={() => setMobileNavOpen(false)}>Compare Programs</Link></li>
-            <li><Link href="/#trustfund" onClick={() => setMobileNavOpen(false)}>Trust Fund</Link></li>
-            <li><Link href="/faq" onClick={() => setMobileNavOpen(false)}>FAQ</Link></li>
-            <li><Link href="/resources" className="active" onClick={() => setMobileNavOpen(false)}>Data</Link></li>
-            <li><Link href="/survey" onClick={() => setMobileNavOpen(false)}>Survey</Link></li>
-            <li className="mobile-only">
-              <Link href="/#action" className="nav-cta mobile" onClick={() => setMobileNavOpen(false)}>Contact Congress</Link>
-            </li>
-          </ul>
-          <Link href="/#action" className="nav-cta">Contact Congress →</Link>
-        </div>
-      </nav>
+      <Header activePage="resources" />
 
       {/* Hero Section */}
       <section className="resources-hero">
         <div className="resources-hero-inner">
-          <div className="hero-badge animate-in">📊 Data Repository</div>
+          <div className="hero-badge animate-in"><BarChart3 size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />Data Repository</div>
           <h1 className="resources-hero-title animate-in delay-1">
             CICP & VICP <span className="accent">Data Resources</span>
           </h1>
@@ -217,7 +200,7 @@ export default function ResourcesClient({ resources, counts }: ResourcesClientPr
               {filteredResources.map((resource, index) => (
                 <div key={index} className="table-row">
                   <div className="category-cell">
-                    <span className="category-icon">{resource.icon}</span>
+                    <span className="category-icon">{iconMap[resource.icon] || resource.icon}</span>
                     {resource.category}
                   </div>
                   <div>
@@ -259,10 +242,10 @@ export default function ResourcesClient({ resources, counts }: ResourcesClientPr
 
           {/* Legend Section */}
           <section className="legend-section">
-            <h3 className="legend-title">📋 Reference Guide</h3>
+            <h3 className="legend-title"><ClipboardList size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />Reference Guide</h3>
             <div className="legend-grid">
               <div className="legend-card">
-                <h4>🏷️ Program Colors</h4>
+                <h4>Program Colors</h4>
                 <div className="legend-item">
                   <div className="legend-color cicp"></div>
                   <span><strong>CICP</strong> -Countermeasures Injury Compensation Program (COVID vaccines)</span>
@@ -277,7 +260,7 @@ export default function ResourcesClient({ resources, counts }: ResourcesClientPr
                 </div>
               </div>
               <div className="legend-card">
-                <h4>🔄 Update Frequency</h4>
+                <h4><RefreshCw size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />Update Frequency</h4>
                 <div className="legend-item">
                   <span className="freq-dot monthly">●</span>
                   <span><strong>Monthly/Weekly</strong> -Regularly updated official data</span>
@@ -300,31 +283,31 @@ export default function ResourcesClient({ resources, counts }: ResourcesClientPr
 
           {/* Quick Links */}
           <div className="quick-links">
-            <h3>🔗 Key Official Sources</h3>
+            <h3>Key Official Sources</h3>
             <div className="quick-links-grid">
               <a href="https://www.hrsa.gov/cicp" target="_blank" rel="noopener noreferrer" className="quick-link">
-                <div className="quick-link-icon">🏛️</div>
+                <div className="quick-link-icon"><Building2 size={24} /></div>
                 <div>
                   <div className="quick-link-text">HRSA CICP</div>
                   <div className="quick-link-desc">Official CICP program page</div>
                 </div>
               </a>
               <a href="https://www.hrsa.gov/vaccine-compensation" target="_blank" rel="noopener noreferrer" className="quick-link">
-                <div className="quick-link-icon">⚖️</div>
+                <div className="quick-link-icon"><Scale size={24} /></div>
                 <div>
                   <div className="quick-link-text">HRSA VICP</div>
                   <div className="quick-link-desc">Official VICP program page</div>
                 </div>
               </a>
               <a href="https://crsreports.congress.gov/product/pdf/R/R46982" target="_blank" rel="noopener noreferrer" className="quick-link">
-                <div className="quick-link-icon">📄</div>
+                <div className="quick-link-icon"><ClipboardList size={24} /></div>
                 <div>
                   <div className="quick-link-text">CRS Report</div>
                   <div className="quick-link-desc">Congressional CICP analysis</div>
                 </div>
               </a>
               <a href="https://www.gao.gov/products/gao-25-107368" target="_blank" rel="noopener noreferrer" className="quick-link">
-                <div className="quick-link-icon">📑</div>
+                <div className="quick-link-icon"><ClipboardList size={24} /></div>
                 <div>
                   <div className="quick-link-text">GAO Report</div>
                   <div className="quick-link-desc">Dec 2024 CICP audit</div>
@@ -335,25 +318,7 @@ export default function ResourcesClient({ resources, counts }: ResourcesClientPr
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="footer">
-        <div className="footer-logo">
-          <span>⚖️</span>
-          <span>U.S. Covid Vaccine Injuries</span>
-        </div>
-        <p className="footer-text">covidvaccineinjuries.us</p>
-        <p className="footer-text">Data sources updated as of January 2026. All links point to official government resources.</p>
-        <p className="footer-text" style={{ fontSize: '12px', maxWidth: '500px', margin: '12px auto 0' }}>
-          This website presents official government data for educational purposes. It is not affiliated with any government agency and does not provide legal or medical advice.
-        </p>
-        <div className="footer-links">
-          <Link href="/">Home</Link>
-          <Link href="/faq">FAQ</Link>
-          <Link href="/resources">Resources</Link>
-          <Link href="/privacy">Privacy Policy</Link>
-          <Link href="/terms">Terms of Service</Link>
-        </div>
-      </footer>
+      <Footer />
     </>
   )
 }
