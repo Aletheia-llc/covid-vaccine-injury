@@ -37,9 +37,26 @@ interface CICPRouletteProps {
 // Falls back to Web Audio API synthesis if files don't exist
 const SPIN_DURATION = 2000; // 2 seconds to match animation
 
+// Store reference to current spin audio so we can stop it precisely
+let currentSpinAudio: HTMLAudioElement | null = null;
+let spinFadeInterval: ReturnType<typeof setInterval> | null = null;
+
 const createAudioContext = () => {
   if (typeof window === 'undefined') return null;
   return new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
+};
+
+// Stop the spin sound immediately
+const stopSpinSound = () => {
+  if (spinFadeInterval) {
+    clearInterval(spinFadeInterval);
+    spinFadeInterval = null;
+  }
+  if (currentSpinAudio) {
+    currentSpinAudio.pause();
+    currentSpinAudio.currentTime = 0;
+    currentSpinAudio = null;
+  }
 };
 
 const playSound = (soundKey: 'click' | 'spin' | 'denied' | 'approved') => {
@@ -49,29 +66,38 @@ const playSound = (soundKey: 'click' | 'spin' | 'denied' | 'approved') => {
   const audio = new Audio(audioFile);
   audio.volume = 0.5;
 
-  // For spin sound, fade out and stop at SPIN_DURATION
+  // For spin sound, track it so we can stop it when animation ends
   if (soundKey === 'spin') {
+    // Stop any existing spin sound first
+    stopSpinSound();
+
+    currentSpinAudio = audio;
+
     audio.play().then(() => {
-      // Fade out near the end
+      // Start fade out 400ms before animation ends
       setTimeout(() => {
-        const fadeOut = setInterval(() => {
-          if (audio.volume > 0.05) {
-            audio.volume = Math.max(0, audio.volume - 0.1);
-          } else {
-            clearInterval(fadeOut);
-            audio.pause();
-            audio.currentTime = 0;
-          }
-        }, 50);
-      }, SPIN_DURATION - 300); // Start fade 300ms before end
+        if (currentSpinAudio === audio) {
+          spinFadeInterval = setInterval(() => {
+            if (currentSpinAudio && currentSpinAudio.volume > 0.05) {
+              currentSpinAudio.volume = Math.max(0, currentSpinAudio.volume - 0.15);
+            } else {
+              stopSpinSound();
+            }
+          }, 40); // Faster fade: 40ms intervals, 0.15 decrease = ~130ms to fade
+        }
+      }, SPIN_DURATION - 400);
     }).catch(() => {
-      // Fall back to synthesized sound
+      currentSpinAudio = null;
       playSynthesizedSound(soundKey);
     });
     return;
   }
 
-  // For other sounds, just play normally
+  // For other sounds, stop spin sound first then play
+  if (soundKey === 'denied' || soundKey === 'approved') {
+    stopSpinSound();
+  }
+
   audio.play().catch(() => {
     playSynthesizedSound(soundKey);
   });
