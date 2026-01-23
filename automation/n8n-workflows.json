@@ -1,0 +1,185 @@
+{
+  "name": "COVID Vaccine Injury Site - Workflow Collection",
+  "description": "n8n workflows for automating notifications and data management",
+  "workflows": [
+    {
+      "name": "Survey Submission Alert",
+      "description": "Sends email/Slack notification when a new survey is submitted",
+      "trigger": "Webhook",
+      "webhook_path": "/webhook/survey-submitted",
+      "nodes": [
+        {
+          "type": "Webhook",
+          "config": {
+            "httpMethod": "POST",
+            "path": "survey-submitted"
+          }
+        },
+        {
+          "type": "Set",
+          "config": {
+            "values": {
+              "subject": "New Survey Submission",
+              "message": "A new survey response has been submitted.\n\nZIP Code: {{$json.zip}}\nBelieves injuries real: {{$json.q1}}\nPersonally affected: {{$json.q2}}\n\nView in admin: https://covidvaccineinjury.us/admin/collections/survey-responses"
+            }
+          }
+        },
+        {
+          "type": "Send Email",
+          "config": {
+            "to": "admin@covidvaccineinjury.us",
+            "subject": "={{$json.subject}}",
+            "text": "={{$json.message}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Contact Form Alert",
+      "description": "Immediate notification when someone submits the contact form",
+      "trigger": "Webhook",
+      "webhook_path": "/webhook/contact-submitted",
+      "nodes": [
+        {
+          "type": "Webhook",
+          "config": {
+            "httpMethod": "POST",
+            "path": "contact-submitted"
+          }
+        },
+        {
+          "type": "Send Email",
+          "config": {
+            "to": "admin@covidvaccineinjury.us",
+            "subject": "New Contact Form: {{$json.subject}}",
+            "text": "From: {{$json.name}} ({{$json.email}})\n\nSubject: {{$json.subject}}\n\nMessage:\n{{$json.message}}\n\n---\nReply directly to this email to respond."
+          }
+        }
+      ]
+    },
+    {
+      "name": "New Subscriber Welcome",
+      "description": "Sends welcome email to new newsletter subscribers",
+      "trigger": "Webhook",
+      "webhook_path": "/webhook/new-subscriber",
+      "nodes": [
+        {
+          "type": "Webhook",
+          "config": {
+            "httpMethod": "POST",
+            "path": "new-subscriber"
+          }
+        },
+        {
+          "type": "Send Email",
+          "config": {
+            "to": "={{$json.email}}",
+            "subject": "Welcome to U.S. COVID Vaccine Injuries Updates",
+            "html": "<h2>Thank you for subscribing, {{$json.name}}!</h2><p>You'll now receive updates about our advocacy efforts for fair compensation for vaccine-injured Americans.</p><p><strong>What you can do now:</strong></p><ul><li><a href='https://covidvaccineinjury.us/survey'>Share your story</a> via our survey</li><li><a href='https://covidvaccineinjury.us/#action'>Contact your representatives</a></li><li><a href='https://covidvaccineinjury.us/donate'>Support our mission</a></li></ul><p>Together, we can make a difference.</p>"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Daily Survey Stats Summary",
+      "description": "Sends daily summary of survey statistics",
+      "trigger": "Cron",
+      "schedule": "0 9 * * *",
+      "nodes": [
+        {
+          "type": "Cron",
+          "config": {
+            "cronExpression": "0 9 * * *"
+          }
+        },
+        {
+          "type": "HTTP Request",
+          "config": {
+            "method": "GET",
+            "url": "https://covidvaccineinjury.us/api/survey/stats",
+            "headers": {
+              "x-api-key": "{{$env.ADMIN_API_KEY}}"
+            }
+          }
+        },
+        {
+          "type": "Send Email",
+          "config": {
+            "to": "admin@covidvaccineinjury.us",
+            "subject": "Daily Survey Stats - {{$now.format('MMMM D, YYYY')}}",
+            "html": "<h2>Survey Statistics</h2><p><strong>Total Responses:</strong> {{$json.total}}</p><p><strong>New (unreviewed):</strong> {{$json.new}}</p><p><strong>Reviewed:</strong> {{$json.reviewed}}</p><h3>Belief Breakdown</h3><ul><li>Yes: {{$json.beliefBreakdown.yes}}</li><li>No: {{$json.beliefBreakdown.no}}</li><li>Unsure: {{$json.beliefBreakdown.unsure}}</li></ul><p><a href='https://covidvaccineinjury.us/admin/collections/survey-responses'>View all responses</a></p>"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Weekly Data Export",
+      "description": "Exports survey data to Google Sheets weekly",
+      "trigger": "Cron",
+      "schedule": "0 8 * * 1",
+      "nodes": [
+        {
+          "type": "Cron",
+          "config": {
+            "cronExpression": "0 8 * * 1",
+            "comment": "Every Monday at 8 AM"
+          }
+        },
+        {
+          "type": "HTTP Request",
+          "config": {
+            "method": "GET",
+            "url": "https://covidvaccineinjury.us/api/survey/export",
+            "headers": {
+              "x-api-key": "{{$env.ADMIN_API_KEY}}"
+            },
+            "responseFormat": "text"
+          }
+        },
+        {
+          "type": "Google Sheets",
+          "config": {
+            "operation": "appendOrUpdate",
+            "sheetId": "YOUR_GOOGLE_SHEET_ID",
+            "range": "Survey Data!A:Z"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Donation Received Alert",
+      "description": "Notification when a donation is completed",
+      "trigger": "Webhook",
+      "webhook_path": "/webhook/donation-received",
+      "nodes": [
+        {
+          "type": "Webhook",
+          "config": {
+            "httpMethod": "POST",
+            "path": "donation-received"
+          }
+        },
+        {
+          "type": "Send Email",
+          "config": {
+            "to": "admin@covidvaccineinjury.us",
+            "subject": "🎉 New Donation Received - ${{$json.amount}}",
+            "html": "<h2>New Donation!</h2><p><strong>Amount:</strong> ${{$json.amount}}</p><p><strong>Recurring:</strong> {{$json.recurring ? 'Yes (monthly)' : 'One-time'}}</p><p><strong>Email:</strong> {{$json.email}}</p><p>Thank the donor and keep up the great work!</p>"
+          }
+        }
+      ]
+    }
+  ],
+  "setup_instructions": {
+    "step1": "Open n8n at http://localhost:5678",
+    "step2": "Create a new workflow for each item above",
+    "step3": "Configure email credentials (SMTP or service like SendGrid)",
+    "step4": "Set environment variables: ADMIN_API_KEY",
+    "step5": "Activate workflows",
+    "step6": "Add webhook calls to the Next.js API routes"
+  },
+  "api_integration": {
+    "description": "Add these webhook calls to your API routes",
+    "example": "await fetch('http://localhost:5678/webhook/survey-submitted', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) })"
+  }
+}
