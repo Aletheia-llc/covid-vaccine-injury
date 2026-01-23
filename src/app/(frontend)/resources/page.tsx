@@ -2,6 +2,9 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import ResourcesClient from './ResourcesClient'
 
+// Force dynamic rendering to avoid build-time database connection
+export const dynamic = 'force-dynamic'
+
 // Revalidate every 60 seconds so CMS changes appear quickly
 export const revalidate = 60
 
