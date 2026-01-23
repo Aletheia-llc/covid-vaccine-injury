@@ -46,12 +46,12 @@ const OPTIONAL_ENV_VARS: OptionalEnvVar[] = [
   {
     name: 'UPSTASH_REDIS_REST_URL',
     description: 'Upstash Redis URL for rate limiting',
-    productionRequired: true,
+    productionRequired: false,  // Rate limiting falls back gracefully
   },
   {
     name: 'UPSTASH_REDIS_REST_TOKEN',
     description: 'Upstash Redis token',
-    productionRequired: true,
+    productionRequired: false,  // Rate limiting falls back gracefully
   },
   {
     name: 'NEXT_PUBLIC_RECAPTCHA_SITE_KEY',
