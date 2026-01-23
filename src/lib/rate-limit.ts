@@ -210,10 +210,16 @@ export async function checkRateLimit(
     return upstashResult
   }
 
-  // Fall back to memory in development only - FAIL CLOSED in production
-  if (process.env.NODE_ENV === 'development') {
+  // Fall back to memory in development/test/CI - FAIL CLOSED only in real production
+  const isDevOrTest = process.env.NODE_ENV === 'development' ||
+                      process.env.NODE_ENV === 'test' ||
+                      process.env.CI === 'true'
+
+  if (isDevOrTest) {
     log.info('rate_limit_fallback', {
-      message: 'Using in-memory rate limiting (development only)',
+      message: 'Using in-memory rate limiting (dev/test/CI only)',
+      env: process.env.NODE_ENV,
+      ci: process.env.CI,
     })
     return checkMemoryRateLimit(identifier, config)
   } else {

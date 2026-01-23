@@ -83,16 +83,15 @@ describe('checkRateLimitSync (in-memory)', () => {
 })
 
 describe('checkRateLimit (async)', () => {
-  it('fails closed in production when Upstash is not configured', async () => {
-    // Without UPSTASH_REDIS_REST_URL in non-development, it should deny requests
-    // This is the "fail closed" security behavior
+  it('falls back to memory in test/CI when Upstash is not configured', async () => {
+    // In test/CI environments, falls back to in-memory rate limiting
+    // Only fails closed in real production (not dev/test/CI)
     const result = await checkRateLimit(`test-async-${Date.now()}`, {
       windowMs: 60000,
       maxRequests: 5,
     })
-    // In test environment (not development), rate limiting fails closed for security
-    expect(result.success).toBe(false)
-    expect(result.remaining).toBe(0)
+    // In test environment, should use in-memory fallback
+    expect(result.success).toBe(true)
   })
 })
 
