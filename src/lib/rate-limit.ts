@@ -210,20 +210,25 @@ export async function checkRateLimit(
     return upstashResult
   }
 
-  // Fall back to memory - log appropriately based on environment
+  // Fall back to memory in development only - FAIL CLOSED in production
   if (process.env.NODE_ENV === 'development') {
     log.info('rate_limit_fallback', {
       message: 'Using in-memory rate limiting (development only)',
     })
+    return checkMemoryRateLimit(identifier, config)
   } else {
-    // In production, this is a warning - rate limiting may not work correctly
-    // across serverless function instances
-    log.warn('rate_limit_upstash_unavailable', {
-      message: 'Upstash not configured or unavailable, falling back to in-memory rate limiting. This may not work correctly in production.',
+    // FAIL CLOSED in production - don't allow requests without proper rate limiting
+    // In-memory rate limiting doesn't work across serverless function instances
+    log.security('rate_limit_unavailable', {
+      message: 'CRITICAL: Upstash not configured or unavailable. Denying request for security.',
       identifier: identifier.substring(0, 20),
     })
+    return {
+      success: false,
+      remaining: 0,
+      resetTime: Date.now() + 60000,
+    }
   }
-  return checkMemoryRateLimit(identifier, config)
 }
 
 /**

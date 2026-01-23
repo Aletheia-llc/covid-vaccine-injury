@@ -22,6 +22,12 @@ export default function Footer({ showDataSources = false }: FooterProps) {
         </p>
       )}
       <p className="footer-text">Advocating for fair compensation for all vaccine-injured Americans.</p>
+      <p className="footer-disclaimer">
+        This website is for informational and advocacy purposes only. Nothing on this site
+        constitutes legal, medical, or financial advice. Consult qualified professionals
+        for guidance on your specific situation. We are not affiliated with HRSA, HHS,
+        or any government agency.
+      </p>
       <div className="footer-links">
         <Link href="/">Home</Link>
         <Link href="/faq">FAQ</Link>

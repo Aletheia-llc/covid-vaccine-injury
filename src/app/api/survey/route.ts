@@ -2,18 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
-import { validateOrigin, csrfErrorResponse } from '@/lib/csrf'
+import { validateCsrfToken } from '@/lib/csrf'
 import { sanitizeEmail, sanitizeZip, sanitizeComment } from '@/lib/sanitize'
 import { verifyRecaptchaTokenSimple } from '@/lib/recaptcha'
-import { log } from '@/lib/logger'
+import { createRequestLogger } from '@/lib/logger'
 
 // Maximum request body size (16KB - survey data should be small)
 const MAX_REQUEST_SIZE = 16 * 1024
 
 export async function POST(request: NextRequest) {
-  // CSRF protection: validate request origin
-  if (!validateOrigin(request)) {
-    return csrfErrorResponse()
+  const requestId = crypto.randomUUID()
+  const log = createRequestLogger({ requestId, path: '/api/survey', method: 'POST' })
+
+  // CSRF protection: validate token
+  const csrfValid = await validateCsrfToken(request)
+  if (!csrfValid) {
+    log.warn('CSRF validation failed')
+    return NextResponse.json(
+      { error: 'Security validation failed. Please refresh and try again.' },
+      { status: 403, headers: { 'X-Request-ID': requestId } }
+    )
   }
 
   try {
@@ -48,10 +56,10 @@ export async function POST(request: NextRequest) {
     if (recaptchaToken) {
       const recaptchaResult = await verifyRecaptchaTokenSimple(recaptchaToken)
       if (!recaptchaResult.success) {
-        log.security('survey_recaptcha_failed', { error: recaptchaResult.error })
+        log.warn({ event: 'survey_recaptcha_failed', error: recaptchaResult.error }, 'reCAPTCHA verification failed')
         return NextResponse.json(
           { error: 'Security verification failed. Please try again.' },
-          { status: 400 }
+          { status: 400, headers: { 'X-Request-ID': requestId } }
         )
       }
     }
@@ -102,10 +110,11 @@ export async function POST(request: NextRequest) {
         return value as T
       }
       // Log invalid value for monitoring (could indicate form tampering)
-      log.warn('survey_invalid_option', {
+      log.warn({
+        event: 'survey_invalid_option',
         field: fieldName,
         value: String(value).substring(0, 50), // Truncate for safety
-      })
+      }, 'Invalid survey option submitted')
       return undefined
     }
 
@@ -116,10 +125,11 @@ export async function POST(request: NextRequest) {
       const filtered = values.filter((v): v is Q9Option => {
         const isValid = (validQ9 as readonly string[]).includes(v)
         if (!isValid && v) {
-          log.warn('survey_invalid_option', {
+          log.warn({
+            event: 'survey_invalid_option',
             field: 'q9',
             value: String(v).substring(0, 50),
-          })
+          }, 'Invalid survey option submitted')
         }
         return isValid
       })
@@ -152,12 +162,15 @@ export async function POST(request: NextRequest) {
       }
     })
 
-    return NextResponse.json({ success: true })
+    return NextResponse.json(
+      { success: true },
+      { headers: { 'X-Request-ID': requestId } }
+    )
   } catch (error) {
-    log.failure('survey_submission', error)
+    log.error({ err: error, event: 'survey_submission_failed' }, 'Survey submission failed')
     return NextResponse.json(
       { error: 'Failed to submit survey. Please try again.' },
-      { status: 500 }
+      { status: 500, headers: { 'X-Request-ID': requestId } }
     )
   }
 }

@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { reportError } from '@/lib/error-reporting'
-import { log } from '@/lib/logger'
+import { createRequestLogger } from '@/lib/logger'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
-import { validateOrigin, csrfErrorResponse } from '@/lib/csrf'
+import { validateCsrfToken } from '@/lib/csrf'
 
 // Maximum request body size (1KB - checkout requests should be tiny)
 const MAX_REQUEST_SIZE = 1024
@@ -11,13 +11,21 @@ const MAX_REQUEST_SIZE = 1024
 const MAX_DONATION_AMOUNT = 1000000
 
 export async function POST(request: NextRequest) {
-  // CSRF protection: validate request origin
-  if (!validateOrigin(request)) {
-    log.security('checkout_csrf_rejected', {
+  const requestId = crypto.randomUUID()
+  const log = createRequestLogger({ requestId, path: '/api/checkout', method: 'POST' })
+
+  // CSRF protection: validate token
+  const csrfValid = await validateCsrfToken(request)
+  if (!csrfValid) {
+    log.warn({
+      event: 'csrf_validation_failed',
       origin: request.headers.get('origin'),
       referer: request.headers.get('referer')
-    })
-    return csrfErrorResponse()
+    }, 'CSRF validation failed')
+    return NextResponse.json(
+      { error: 'Security validation failed. Please refresh and try again.' },
+      { status: 403, headers: { 'X-Request-ID': requestId } }
+    )
   }
 
   try {
@@ -27,7 +35,7 @@ export async function POST(request: NextRequest) {
     // Check rate limit (10 checkout attempts per minute)
     const rateCheck = await checkRateLimit(ip, { maxRequests: 10, windowMs: 60000 })
     if (!rateCheck.success) {
-      log.security('checkout_rate_limited', { ipPrefix: ip.substring(0, 8) })
+      log.warn({ event: 'checkout_rate_limited', ipPrefix: ip.substring(0, 8) }, 'Rate limit exceeded')
       const retryAfterSeconds = Math.ceil((rateCheck.resetTime - Date.now()) / 1000)
       return NextResponse.json(
         { error: 'Too many requests. Please try again in a minute.' },
@@ -77,7 +85,7 @@ export async function POST(request: NextRequest) {
     // Check for API key
     const stripeKey = process.env.STRIPE_SECRET_KEY
     if (!stripeKey) {
-      log.security('stripe_checkout_not_configured')
+      log.error({ event: 'stripe_checkout_not_configured' }, 'Stripe API key missing')
       return NextResponse.json(
         { error: 'Payment system is not configured. Please contact support.' },
         { status: 500 }
@@ -88,10 +96,11 @@ export async function POST(request: NextRequest) {
     // Stripe secret keys are: sk_test_ or sk_live_ followed by 24+ alphanumeric chars
     const stripeKeyPattern = /^sk_(test|live)_[a-zA-Z0-9]{24,}$/
     if (!stripeKeyPattern.test(stripeKey)) {
-      log.security('stripe_checkout_invalid_key_format', {
+      log.error({
+        event: 'stripe_checkout_invalid_key_format',
         keyLength: stripeKey.length,
         prefix: stripeKey.substring(0, 8),
-      })
+      }, 'Invalid Stripe key format')
       return NextResponse.json(
         { error: 'Payment system configuration error. Please contact support.' },
         { status: 500 }
@@ -130,7 +139,7 @@ export async function POST(request: NextRequest) {
         billing_address_collection: 'required',
       })
 
-      log.success('stripe_checkout_created', { recurring: true, amount })
+      log.info({ event: 'stripe_checkout_created', recurring: true, amount }, 'Checkout session created')
       return NextResponse.json({ url: session.url })
     } else {
       // Create a one-time donation
@@ -157,7 +166,7 @@ export async function POST(request: NextRequest) {
         submit_type: 'donate',
       })
 
-      log.success('stripe_checkout_created', { recurring: false, amount })
+      log.info({ event: 'stripe_checkout_created', recurring: false, amount }, 'Checkout session created')
       return NextResponse.json({ url: session.url })
     }
   } catch (error) {

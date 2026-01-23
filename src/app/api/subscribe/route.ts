@@ -2,18 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getPayload } from 'payload'
 import config from '@/payload.config'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
-import { validateOrigin, csrfErrorResponse } from '@/lib/csrf'
+import { validateCsrfToken } from '@/lib/csrf'
 import { sanitizeName, sanitizeEmail, sanitizePhone, sanitizeZip } from '@/lib/sanitize'
 import { verifyRecaptchaTokenSimple } from '@/lib/recaptcha'
-import { log } from '@/lib/logger'
+import { createRequestLogger } from '@/lib/logger'
 
 // Maximum request body size (4KB - subscription data should be tiny)
 const MAX_REQUEST_SIZE = 4 * 1024
 
 export async function POST(request: NextRequest) {
-  // CSRF protection: validate request origin
-  if (!validateOrigin(request)) {
-    return csrfErrorResponse()
+  const requestId = crypto.randomUUID()
+  const log = createRequestLogger({ requestId, path: '/api/subscribe', method: 'POST' })
+
+  // CSRF protection: validate token
+  const csrfValid = await validateCsrfToken(request)
+  if (!csrfValid) {
+    log.warn('CSRF validation failed')
+    return NextResponse.json(
+      { error: 'Security validation failed. Please refresh and try again.' },
+      { status: 403, headers: { 'X-Request-ID': requestId } }
+    )
   }
 
   try {
@@ -48,10 +56,10 @@ export async function POST(request: NextRequest) {
     if (recaptchaToken) {
       const recaptchaResult = await verifyRecaptchaTokenSimple(recaptchaToken)
       if (!recaptchaResult.success) {
-        log.security('subscribe_recaptcha_failed', { error: recaptchaResult.error })
+        log.warn({ event: 'subscribe_recaptcha_failed', error: recaptchaResult.error }, 'reCAPTCHA verification failed')
         return NextResponse.json(
           { error: 'Security verification failed. Please try again.' },
-          { status: 400 }
+          { status: 400, headers: { 'X-Request-ID': requestId } }
         )
       }
     }
@@ -86,47 +94,70 @@ export async function POST(request: NextRequest) {
 
     const payload = await getPayload({ config })
 
-    // Check if email already exists
-    const existing = await payload.find({
-      collection: 'subscribers',
-      where: { email: { equals: email } },
-      limit: 1,
-    })
+    // Try to create first, then handle duplicate key error
+    // This avoids the race condition of check-then-act pattern
+    try {
+      await payload.create({
+        collection: 'subscribers',
+        data: {
+          name,
+          email,
+          phone: phone || undefined,
+          zip: zip || undefined,
+          source: 'website',
+          status: 'active',
+        },
+      })
+      return NextResponse.json(
+        { success: true, message: 'Thank you for subscribing!' },
+        { headers: { 'X-Request-ID': requestId } }
+      )
+    } catch (createError) {
+      // Check if this is a duplicate key error
+      const errorMessage = createError instanceof Error ? createError.message : String(createError)
+      const isDuplicate = errorMessage.includes('unique') ||
+                          errorMessage.includes('duplicate') ||
+                          errorMessage.includes('already exists')
 
-    if (existing.docs.length > 0) {
-      // If they unsubscribed before, reactivate
-      const existingDoc = existing.docs[0]
-      if (existingDoc.status === 'unsubscribed') {
-        await payload.update({
+      if (isDuplicate) {
+        // Email already exists - check if unsubscribed and can be reactivated
+        const existing = await payload.find({
           collection: 'subscribers',
-          id: existingDoc.id,
-          data: {
-            name,
-            phone: phone || undefined,
-            zip: zip || undefined,
-            status: 'active',
-          },
+          where: { email: { equals: email } },
+          limit: 1,
         })
-        return NextResponse.json({ success: true, message: 'Welcome back! Your subscription has been reactivated.' })
+
+        if (existing.docs.length > 0 && existing.docs[0].status === 'unsubscribed') {
+          await payload.update({
+            collection: 'subscribers',
+            id: existing.docs[0].id,
+            data: {
+              name,
+              phone: phone || undefined,
+              zip: zip || undefined,
+              status: 'active',
+            },
+          })
+          return NextResponse.json(
+            { success: true, message: 'Welcome back! Your subscription has been reactivated.' },
+            { headers: { 'X-Request-ID': requestId } }
+          )
+        }
+
+        return NextResponse.json(
+          { error: 'This email is already subscribed' },
+          { status: 400, headers: { 'X-Request-ID': requestId } }
+        )
       }
-      return NextResponse.json({ error: 'This email is already subscribed' }, { status: 400 })
+
+      // Not a duplicate error - rethrow
+      throw createError
     }
-
-    await payload.create({
-      collection: 'subscribers',
-      data: {
-        name,
-        email,
-        phone: phone || undefined,
-        zip: zip || undefined,
-        source: 'website',
-        status: 'active',
-      },
-    })
-
-    return NextResponse.json({ success: true, message: 'Thank you for subscribing!' })
   } catch (error) {
-    log.failure('subscribe', error)
-    return NextResponse.json({ error: 'Failed to subscribe. Please try again.' }, { status: 500 })
+    log.error({ err: error, event: 'subscribe_failed' }, 'Subscribe failed')
+    return NextResponse.json(
+      { error: 'Failed to subscribe. Please try again.' },
+      { status: 500, headers: { 'X-Request-ID': requestId } }
+    )
   }
 }

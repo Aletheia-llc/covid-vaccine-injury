@@ -7,6 +7,7 @@ vi.mock('./logger', () => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
+    security: vi.fn(),
   },
 }))
 
@@ -82,13 +83,16 @@ describe('checkRateLimitSync (in-memory)', () => {
 })
 
 describe('checkRateLimit (async)', () => {
-  it('falls back to memory when Upstash is not configured', async () => {
-    // Without UPSTASH_REDIS_REST_URL, it should use memory
+  it('fails closed in production when Upstash is not configured', async () => {
+    // Without UPSTASH_REDIS_REST_URL in non-development, it should deny requests
+    // This is the "fail closed" security behavior
     const result = await checkRateLimit(`test-async-${Date.now()}`, {
       windowMs: 60000,
       maxRequests: 5,
     })
-    expect(result.success).toBe(true)
+    // In test environment (not development), rate limiting fails closed for security
+    expect(result.success).toBe(false)
+    expect(result.remaining).toBe(0)
   })
 })
 

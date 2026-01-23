@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { fetchWithCsrf, fetchCsrfToken } from '@/lib/csrf-client'
 
 const PRESET_AMOUNTS = [25, 50, 100, 250, 500, 1000]
 
@@ -11,6 +12,11 @@ export default function DonationForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
+  // Prefetch CSRF token on mount
+  useEffect(() => {
+    fetchCsrfToken()
+  }, [])
+
   const handlePresetClick = (preset: number) => {
     setAmount(preset)
     setCustomAmount('')
@@ -18,7 +24,20 @@ export default function DonationForm() {
   }
 
   const handleCustomChange = (value: string) => {
-    const numValue = value.replace(/[^0-9.]/g, '')
+    // Remove non-numeric characters except decimal point
+    let numValue = value.replace(/[^0-9.]/g, '')
+
+    // Only allow one decimal point - keep first occurrence
+    const parts = numValue.split('.')
+    if (parts.length > 2) {
+      numValue = parts[0] + '.' + parts.slice(1).join('')
+    }
+
+    // Limit to 2 decimal places
+    if (parts.length === 2 && parts[1].length > 2) {
+      numValue = parts[0] + '.' + parts[1].substring(0, 2)
+    }
+
     setCustomAmount(numValue)
     setAmount('')
     setError('')
@@ -26,7 +45,11 @@ export default function DonationForm() {
 
   const getFinalAmount = (): number => {
     if (amount) return amount
-    if (customAmount) return parseFloat(customAmount)
+    if (customAmount) {
+      const parsed = parseFloat(customAmount)
+      // Return 0 if parsing fails or results in invalid number
+      return Number.isFinite(parsed) && parsed > 0 ? parsed : 0
+    }
     return 0
   }
 
@@ -42,7 +65,7 @@ export default function DonationForm() {
     setError('')
 
     try {
-      const res = await fetch('/api/checkout', {
+      const res = await fetchWithCsrf('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -55,6 +78,8 @@ export default function DonationForm() {
 
       if (data.url) {
         window.location.href = data.url
+      } else if (res.status === 403) {
+        setError('Security validation failed. Please refresh the page and try again.')
       } else {
         setError(data.error || 'Something went wrong')
       }

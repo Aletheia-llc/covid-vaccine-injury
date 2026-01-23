@@ -2059,6 +2059,18 @@ section {
   color: var(--accent);
 }
 
+.footer-disclaimer {
+  margin: 20px auto;
+  padding: 16px 24px;
+  max-width: 800px;
+  font-size: 11px;
+  line-height: 1.6;
+  color: rgba(255,255,255,0.5);
+  background: rgba(255,255,255,0.05);
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
 .footer-attribution {
   margin-top: 24px;
   font-size: 11px;
@@ -4176,6 +4188,98 @@ section {
 
 .not-found-links a:hover {
   text-decoration: underline;
+}
+
+/* ========================================
+   COOKIE CONSENT BANNER
+   ======================================== */
+
+.cookie-consent {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--navy);
+  border-top: 1px solid rgba(255,255,255,0.1);
+  padding: 16px 24px;
+  z-index: 9998;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.cookie-consent-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.cookie-consent-content p {
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+  line-height: 1.5;
+  margin: 0;
+  flex: 1;
+}
+
+.cookie-consent-actions {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.cookie-btn {
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: none;
+}
+
+.cookie-btn-accept {
+  background: var(--accent);
+  color: var(--navy);
+}
+
+.cookie-btn-accept:hover {
+  background: var(--accent-dark);
+}
+
+.cookie-btn-decline {
+  background: transparent;
+  color: rgba(255,255,255,0.7);
+  border: 1px solid rgba(255,255,255,0.3);
+}
+
+.cookie-btn-decline:hover {
+  background: rgba(255,255,255,0.1);
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .cookie-consent-content {
+    flex-direction: column;
+    text-align: center;
+  }
+
+  .cookie-consent-actions {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 /* ========================================

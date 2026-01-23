@@ -2,16 +2,24 @@ import { getPayload } from 'payload'
 import config from '@payload-config'
 import { NextResponse } from 'next/server'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
-import { validateOrigin, csrfErrorResponse } from '@/lib/csrf'
+import { validateCsrfToken } from '@/lib/csrf'
 import { sanitizeName, sanitizeEmail, sanitizeComment } from '@/lib/sanitize'
-import { log } from '@/lib/logger'
+import { createRequestLogger } from '@/lib/logger'
 
 type SubjectType = 'general' | 'story' | 'media' | 'legislative' | 'other'
 
 export async function POST(request: Request) {
-  // CSRF protection: validate request origin
-  if (!validateOrigin(request)) {
-    return csrfErrorResponse()
+  const requestId = crypto.randomUUID()
+  const log = createRequestLogger({ requestId, path: '/api/contact', method: 'POST' })
+
+  // CSRF protection: validate token
+  const csrfValid = await validateCsrfToken(request)
+  if (!csrfValid) {
+    log.warn('CSRF validation failed')
+    return NextResponse.json(
+      { error: 'Security validation failed. Please refresh and try again.' },
+      { status: 403, headers: { 'X-Request-ID': requestId } }
+    )
   }
 
   try {
@@ -96,12 +104,15 @@ export async function POST(request: Request) {
       },
     })
 
-    return NextResponse.json({ success: true, message: 'Your message has been sent.' })
+    return NextResponse.json(
+      { success: true, message: 'Your message has been sent.' },
+      { headers: { 'X-Request-ID': requestId } }
+    )
   } catch (error) {
-    log.failure('contact_form_submission', error)
+    log.error({ err: error, event: 'contact_form_submission' }, 'Contact form submission failed')
     return NextResponse.json(
       { error: 'Unable to send message. Please try again later.' },
-      { status: 500 }
+      { status: 500, headers: { 'X-Request-ID': requestId } }
     )
   }
 }
