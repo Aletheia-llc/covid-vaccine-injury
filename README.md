@@ -26,30 +26,34 @@ Compare this to the VICP (for other vaccines):
 
 - **Data Visualization**: Interactive comparison of CICP vs VICP statistics
 - **Compensation Calculator**: Estimate potential compensation under different scenarios
+- **CICP Roulette**: Interactive demonstration of the 0.3% approval odds
 - **Representative Lookup**: Find and contact your elected officials by ZIP code
 - **Survey System**: Collect stories and experiences from vaccine-injured Americans
 - **Resource Library**: Curated links to government reports, research, and legislation
 - **Donation System**: Stripe-integrated donations to support advocacy efforts
+- **Cookie Consent**: GDPR-compliant analytics consent banner
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|------------|
-| Framework | Next.js 15 (App Router) |
-| CMS | Payload CMS 3.72 |
-| Database | PostgreSQL (Supabase) |
-| Styling | Tailwind CSS + Custom CSS |
-| Payments | Stripe |
-| Analytics | Vercel Analytics |
-| Error Tracking | Sentry |
-| Deployment | Vercel |
+| Layer | Technology | Version |
+|-------|------------|---------|
+| Framework | Next.js (App Router) | 15.4.10 |
+| CMS | Payload CMS | 3.72.0 |
+| Database | PostgreSQL (Supabase) | - |
+| Language | TypeScript | 5.7.3 |
+| Styling | Tailwind CSS + Custom CSS | 4.1.18 |
+| Payments | Stripe | 20.2.0 |
+| Analytics | Vercel Analytics | 1.6.1 |
+| Error Tracking | Sentry | 10.36.0 |
+| Testing | Vitest + Playwright | 3.2.3 / 1.56.1 |
+| Deployment | Vercel | - |
 
 ## Quick Start
 
 ### Prerequisites
 
 - Node.js 20.x
-- npm (or pnpm 9+)
+- npm or pnpm 9+
 - PostgreSQL database (Supabase recommended)
 
 ### Installation
@@ -117,30 +121,60 @@ See `.env.example` for detailed documentation of each variable.
 src/
 ├── app/
 │   ├── (frontend)/          # Public pages
-│   │   ├── components/      # React components (Header, Footer, etc.)
+│   │   ├── components/      # React components
+│   │   │   ├── Header.tsx       # Navigation header
+│   │   │   ├── Footer.tsx       # Site footer with legal disclaimer
+│   │   │   ├── CookieConsent.tsx # GDPR cookie consent banner
+│   │   │   ├── AnalyticsWrapper.tsx # Conditional analytics loader
+│   │   │   └── CICPRoulette.tsx # Interactive approval odds demo
 │   │   ├── donate/          # Donation flow
 │   │   ├── survey/          # Survey form
 │   │   ├── faq/             # FAQ page
 │   │   ├── resources/       # Resource library
+│   │   ├── privacy/         # Privacy policy
+│   │   ├── terms/           # Terms of service
+│   │   ├── roulette/        # CICP Roulette page
 │   │   ├── page.tsx         # Homepage
+│   │   ├── layout.tsx       # Root layout
 │   │   └── styles.css       # Global styles
 │   ├── (payload)/           # Payload CMS admin
 │   └── api/                 # API routes
-│       ├── survey/          # Survey submission + stats
+│       ├── survey/          # Survey submission + stats + export
 │       ├── contact/         # Contact form
 │       ├── subscribe/       # Newsletter signup
 │       ├── checkout/        # Stripe checkout
+│       ├── donation-webhook/ # Stripe webhook
 │       ├── representatives/ # Representative lookup
+│       ├── statistics/      # Public statistics API
+│       ├── csrf/            # CSRF token endpoint
 │       └── health/          # Health check endpoint
 ├── collections/             # Payload CMS data models
-├── lib/                     # Utility libraries
-│   ├── rate-limit.ts        # Rate limiting (Upstash + memory fallback)
-│   ├── csrf.ts              # CSRF protection
-│   ├── sanitize.ts          # Input sanitization
-│   ├── auth.ts              # Admin authentication
-│   ├── logger.ts            # Structured logging (Pino)
-│   └── recaptcha.ts         # reCAPTCHA verification
+│   ├── Users.ts
+│   ├── FAQs.ts
+│   ├── Statistics.ts
+│   ├── Resources.ts
+│   ├── SurveyResponses.ts
+│   ├── FormSubmissions.ts
+│   ├── Subscribers.ts
+│   ├── LegalPages.ts
+│   └── Media.ts
+├── components/              # Shared components
+│   └── DonationForm.tsx
 ├── hooks/                   # React hooks
+│   └── useAnimations.ts
+├── lib/                     # Utility libraries
+│   ├── auth.ts              # Admin authentication
+│   ├── constants.ts         # Centralized configuration
+│   ├── csrf.ts              # CSRF protection (token-based)
+│   ├── csrf-client.ts       # Client-side CSRF helpers
+│   ├── env-validation.ts    # Environment variable validation
+│   ├── error-reporting.ts   # Sentry error reporting
+│   ├── logger.ts            # Structured logging (Pino)
+│   ├── n8n.ts               # N8N workflow integration
+│   ├── rate-limit.ts        # Rate limiting (Upstash/memory)
+│   ├── recaptcha.ts         # reCAPTCHA v3 verification
+│   ├── sanitize.ts          # Input sanitization
+│   └── validation.ts        # Input validation utilities
 └── middleware.ts            # Security headers
 ```
 
@@ -158,30 +192,43 @@ See [API.md](./API.md) for complete API documentation.
 | `/api/contact` | POST | Submit contact form |
 | `/api/subscribe` | POST | Subscribe to newsletter |
 | `/api/checkout` | POST | Create Stripe checkout session |
+| `/api/donation-webhook` | POST | Stripe payment webhook |
 | `/api/representatives` | GET | Look up representatives by ZIP |
+| `/api/statistics` | GET | Get public statistics |
 
 ## Scripts
 
 ```bash
-npm run dev          # Start development server
-npm run build        # Production build
-npm run start        # Start production server
-npm run lint         # Run ESLint
-npm run typecheck    # Run TypeScript type checking
-npm run test:unit    # Run unit tests
-npm run test:e2e     # Run Playwright E2E tests
+npm run dev              # Start development server
+npm run devsafe          # Clear cache and start dev
+npm run build            # Production build
+npm run start            # Start production server
+npm run lint             # Run ESLint
+npm run typecheck        # Run TypeScript type checking
+npm run test             # Run all tests
+npm run test:unit        # Run unit tests only
+npm run test:unit:watch  # Run unit tests in watch mode
+npm run test:unit:coverage # Run tests with coverage
+npm run test:e2e         # Run Playwright E2E tests
+npm run test:e2e:ui      # Run E2E tests with UI
+npm run test:e2e:headed  # Run E2E tests with visible browser
+npm run generate:types   # Regenerate Payload TypeScript types
+npm run seed             # Seed the database
 ```
 
 ## Security
 
 This application implements multiple security layers:
 
-- **CSRF Protection**: Token-based with HMAC-SHA256 signatures
-- **Rate Limiting**: Upstash Redis (production) or in-memory (development)
+- **CSRF Protection**: Token-based with HMAC-SHA256 signatures and double-submit cookies
+- **Rate Limiting**: Upstash Redis (production) with fail-closed behavior, in-memory (development)
 - **Input Sanitization**: XSS prevention on all user inputs
-- **Security Headers**: CSP, HSTS, X-Frame-Options, etc.
+- **Security Headers**: CSP, HSTS, X-Frame-Options, X-Content-Type-Options
 - **reCAPTCHA v3**: Bot protection on form submissions
 - **Timing-Safe Comparisons**: For API key and token validation
+- **Request Tracing**: Correlation IDs on all API responses
+
+See [SECURITY.md](./SECURITY.md) for the full security policy.
 
 ## Data Collections
 
@@ -195,6 +242,7 @@ This application implements multiple security layers:
 | FormSubmissions | Contact form submissions |
 | Subscribers | Newsletter email list |
 | LegalPages | Privacy policy and terms of service |
+| Media | Uploaded images and files |
 
 ## Deployment
 
@@ -216,18 +264,20 @@ npm run build
 npm run start
 ```
 
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for detailed deployment instructions.
+
 ## Documentation
 
 | Document | Description |
 |----------|-------------|
 | [API.md](./API.md) | REST API endpoints, authentication, CSRF flow |
-| [ARCHITECTURE.md](./ARCHITECTURE.md) | System design, caching, and data flow |
-| [CHANGELOG.md](./CHANGELOG.md) | Version history and release notes |
-| [CONTRIBUTING.md](./CONTRIBUTING.md) | Development guidelines and code style |
-| [DEPLOYMENT.md](./DEPLOYMENT.md) | Vercel deployment, environment setup |
-| [MONITORING.md](./MONITORING.md) | Logging, alerting, and observability |
-| [SECURITY.md](./SECURITY.md) | Security policy, compliance, incident response |
-| [TESTING.md](./TESTING.md) | Testing strategy, coverage requirements |
+| [ARCHITECTURE.md](./ARCHITECTURE.md) | System design, data flow, security layers |
+| [DEPLOYMENT.md](./DEPLOYMENT.md) | Production deployment guide |
+| [SECURITY.md](./SECURITY.md) | Security policy and vulnerability reporting |
+| [TESTING.md](./TESTING.md) | Testing strategy and procedures |
+| [CONTRIBUTING.md](./CONTRIBUTING.md) | Development guidelines |
+| [docs/REPLICATION.md](./docs/REPLICATION.md) | Template guide - how to reuse this codebase |
+| [.env.example](./.env.example) | Environment variable documentation |
 
 ## Troubleshooting
 
@@ -244,7 +294,7 @@ PORT=3001 npm run dev
 
 **Database connection errors**
 - Verify `DATABASE_URL` is correct in your `.env` file
-- For Supabase, use the "Session pooler" connection string (not "Transaction pooler")
+- For Supabase, use the "Session pooler" connection string
 - Ensure your IP is allowed in Supabase project settings
 
 **"PAYLOAD_SECRET is required" error**
@@ -255,7 +305,7 @@ PORT=3001 npm run dev
 **Build fails with "Cannot find module"**
 ```bash
 # Clean install dependencies
-rm -rf node_modules package-lock.json
+rm -rf node_modules .next
 npm install
 ```
 
@@ -266,14 +316,19 @@ npm run generate:types
 ```
 
 **Rate limiting warnings in logs**
-- This is expected if Upstash Redis is not configured
-- For production, configure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN`
-- Without Redis, rate limiting falls back gracefully
+- Expected if Upstash Redis is not configured
+- In production without Redis, rate limiting fails closed (denies requests)
+- Configure `UPSTASH_REDIS_REST_URL` and `UPSTASH_REDIS_REST_TOKEN` for production
 
 **reCAPTCHA not working**
 - Ensure both `NEXT_PUBLIC_RECAPTCHA_SITE_KEY` and `RECAPTCHA_SECRET_KEY` are set
-- In development, reCAPTCHA is optional and bypassed if not configured
+- In development, reCAPTCHA is bypassed if not configured
 - Check that your domain is allowed in Google reCAPTCHA console
+
+**CSRF validation failing**
+- Ensure client includes `credentials: 'include'` in fetch requests
+- Token must be fetched from `/api/csrf` and sent in `x-csrf-token` header
+- In development, localhost requests bypass CSRF validation
 
 **Stripe checkout not working**
 - Verify `STRIPE_SECRET_KEY` and `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` are set

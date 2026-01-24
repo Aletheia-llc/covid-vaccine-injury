@@ -489,7 +489,7 @@ export default function FAQPage() {
                 <li><strong>Contact your representatives:</strong> Call or write your U.S. Representative and Senators. Ask them to support legislation adding COVID-19 vaccines to VICP coverage.</li>
                 <li><strong>Share information:</strong> Help spread awareness about the compensation gap. Many people don&apos;t know that COVID vaccines are treated differently.</li>
                 <li><strong>Tell your story:</strong> If you or someone you know was injured, sharing your experience (publicly or with policymakers) can be powerful.</li>
-                <li><strong>Support advocacy organizations:</strong> Groups like React19 and others are working to support injured individuals and advocate for reform.</li>
+                <li><strong>Support advocacy organizations:</strong> Groups like <a href="https://react19.org" target="_blank" rel="noopener noreferrer">React19.org</a> and others are working to support injured individuals and advocate for reform.</li>
                 <li><strong>Engage with officials:</strong> Attend town halls, submit public comments on proposed regulations, and make your voice heard.</li>
               </ol>
             </>
@@ -573,6 +573,7 @@ export default function FAQPage() {
           <p>Contact your representatives and tell them: Americans injured by COVID-19 vaccines should have access to the same compensation process as those injured by other routine vaccines.</p>
           <div className="cta-buttons">
             <Link href="/#action" className="cta-btn primary">Find Your Representative</Link>
+            <Link href="/#subscribe" className="cta-btn secondary">Sign Up</Link>
             <Link href="/resources" className="cta-btn secondary">View the Data</Link>
           </div>
         </div>

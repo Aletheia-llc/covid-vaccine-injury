@@ -56,8 +56,14 @@ export default function Header({ activePage, onRouletteOpen }: HeaderProps) {
           <li className="mobile-only">
             <Link href="/#action" className="nav-cta mobile" onClick={() => { setMobileNavOpen(false); track('cta_clicked', { location: 'nav_mobile', type: 'contact_congress' }) }}>Contact Congress</Link>
           </li>
+          <li className="mobile-only">
+            <Link href="/#subscribe" className="nav-cta mobile secondary" onClick={() => { setMobileNavOpen(false); track('cta_clicked', { location: 'nav_mobile', type: 'sign_up' }) }}>Sign Up</Link>
+          </li>
         </ul>
-        <Link href="/#action" className="nav-cta" onClick={() => track('cta_clicked', { location: 'nav', type: 'contact_congress' })}>Contact Congress</Link>
+        <div className="nav-cta-group">
+          <Link href="/#action" className="nav-cta" onClick={() => track('cta_clicked', { location: 'nav', type: 'contact_congress' })}>Contact Congress</Link>
+          <Link href="/#subscribe" className="nav-cta secondary" onClick={() => track('cta_clicked', { location: 'nav', type: 'sign_up' })}>Sign Up</Link>
+        </div>
       </div>
     </nav>
   )

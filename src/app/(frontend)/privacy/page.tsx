@@ -274,7 +274,7 @@ export default function PrivacyPolicyPage() {
               <h3>Advocacy Partners</h3>
               <p>We work with allied organizations advocating for vaccine injury compensation reform, such as:</p>
               <ul>
-                <li>React19</li>
+                <li><a href="https://react19.org" target="_blank" rel="noopener noreferrer">React19.org</a></li>
                 <li>Vaccine Injured Petitioners Bar Association</li>
                 <li>Other 501(c)(3) and 501(c)(4) health advocacy groups</li>
               </ul>

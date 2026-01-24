@@ -132,11 +132,20 @@ describe('CSRF Token Security', () => {
       const token = generateCsrfToken()
       const parts = token.split('.')
 
-      // Slightly different signature (same length)
-      const wrongSig = parts[2].replace('a', 'b')
-      const wrongToken = `${parts[0]}.${parts[1]}.${wrongSig}`
+      // Create a completely different signature of same length
+      // by reversing the signature string
+      const originalSig = parts[2]
+      const wrongSig = originalSig.split('').reverse().join('')
 
-      expect(verifyCsrfToken(wrongToken)).toBe(false)
+      // Only test if the reversal actually changed the signature
+      if (wrongSig !== originalSig) {
+        const wrongToken = `${parts[0]}.${parts[1]}.${wrongSig}`
+        expect(verifyCsrfToken(wrongToken)).toBe(false)
+      } else {
+        // Edge case: palindromic signature (extremely unlikely with hex)
+        // Just verify original works
+        expect(verifyCsrfToken(token)).toBe(true)
+      }
     })
   })
 

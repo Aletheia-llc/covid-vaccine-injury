@@ -36,6 +36,31 @@ const resources = [
   { title: "VICP Petition Forms", description: "Required forms for filing VICP petitions", url: "https://www.hrsa.gov/vaccine-compensation/filing", category: "vicp-stats" as const, sourceType: "government" as const, order: 31 },
 ]
 
+const statistics = [
+  // CICP Statistics
+  { key: 'cicp_claims_filed', label: 'CICP Claims Filed', value: '14,046', numericValue: 14046, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 1 },
+  { key: 'cicp_compensated', label: 'Americans Compensated', value: '42', numericValue: 42, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 2 },
+  { key: 'cicp_approval_rate', label: 'CICP Approval Rate', value: '0.3%', numericValue: 0.3, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 3 },
+  { key: 'cicp_decisions_rendered', label: 'Decisions Rendered', value: '6,273', numericValue: 6273, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 4 },
+  { key: 'cicp_pending_percent', label: 'Claims Still Pending', value: '55%', numericValue: 55, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 5 },
+  { key: 'cicp_denial_rate', label: 'Decided Claims Denied', value: '99.3%', numericValue: 99.3, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 6 },
+  { key: 'cicp_avg_decision_time', label: 'Average Time to Decision', value: '24 mo', numericValue: 24, program: 'cicp' as const, source: 'GAO Report GAO-25-107368', sourceUrl: 'https://www.gao.gov/products/gao-25-107368', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 7 },
+  { key: 'cicp_total_paid', label: 'CICP Total Paid', value: '$6.5M', numericValue: 6500000, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 8 },
+  { key: 'cicp_median_payment', label: 'Typical CICP Payment', value: '$4,132', numericValue: 4132, program: 'cicp' as const, source: 'HRSA Table 4', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data/table-4', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 9 },
+  { key: 'cicp_outlier_payment', label: 'Single TTS Case Payment', value: '$5.94M', numericValue: 5940000, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 10 },
+  { key: 'cicp_others_total', label: 'Other 41 Cases Total', value: '$575K', numericValue: 575000, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 11 },
+
+  // VICP Statistics
+  { key: 'vicp_approval_rate', label: 'VICP Approval Rate', value: '~48%', numericValue: 48, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 12 },
+  { key: 'vicp_total_compensated', label: 'VICP Total Compensated', value: '12,300+', numericValue: 12300, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 13 },
+  { key: 'vicp_total_claims', label: 'VICP Total Claims', value: '~29,000', numericValue: 29000, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 14 },
+  { key: 'vicp_total_paid', label: 'VICP Total Paid', value: '$5.4B', numericValue: 5400000000, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 15 },
+  { key: 'vicp_average_award', label: 'Average VICP Award', value: '$450,000', numericValue: 450000, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 16 },
+
+  // General/Trust Fund Statistics
+  { key: 'trust_fund_balance', label: 'VICP Trust Fund Balance', value: '$4.5B', numericValue: 4500000000, program: 'general' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 17 },
+]
+
 const faqs = [
   // VICP FAQs
   {
@@ -136,7 +161,20 @@ const faqs = [
 async function seed() {
   const payload = await getPayload({ config })
 
-  console.log('Seeding resources...')
+  console.log('Seeding statistics...')
+  for (const stat of statistics) {
+    try {
+      await payload.create({
+        collection: 'statistics',
+        data: stat,
+      })
+      console.log(`Created statistic: ${stat.key}`)
+    } catch (_error) {
+      console.log(`Statistic may already exist: ${stat.key}`)
+    }
+  }
+
+  console.log('\nSeeding resources...')
   for (const resource of resources) {
     try {
       await payload.create({

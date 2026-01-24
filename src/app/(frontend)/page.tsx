@@ -5,6 +5,8 @@ import Link from 'next/link'
 import { track } from '@vercel/analytics'
 import { useSiteAnimations } from '@/hooks/useAnimations'
 import { executeRecaptchaAction } from '@/hooks/useRecaptcha'
+import { useStatistics } from '@/hooks/useStatistics'
+import { fetchWithCsrf } from '@/lib/csrf-client'
 import CICPRoulette from './components/CICPRoulette'
 import Header from './components/Header'
 import Footer from './components/Footer'
@@ -28,9 +30,13 @@ import {
 export default function HomePage() {
   // Initialize site animations (hero, scroll, funnel interactions)
   useSiteAnimations()
+
+  // Fetch statistics from CMS
+  const { statistics, getNumeric } = useStatistics()
+
   const [scrollProgress, setScrollProgress] = useState(0)
   const [heroStats, setHeroStats] = useState({ claims: 0, compensated: 0, rate: 0, vicp: 0 })
-  const [calcValues, setCalcValues] = useState({ approval: 40, award: 300000, claims: 14046 })
+  const [calcValues, setCalcValues] = useState({ approval: 40, award: 300000, claims: getNumeric('cicp_claims_filed') || 14046 })
   const [appropriation, setAppropriation] = useState(0)
   const [personalCalc, setPersonalCalc] = useState({
     medical: 50000,
@@ -55,7 +61,13 @@ export default function HomePage() {
     const [calcTracked, setCalcTracked] = useState({ main: false, personal: false })
   const [rouletteOpen, setRouletteOpen] = useState(false)
   const [rouletteTriggered, setRouletteTriggered] = useState(false)
+  const [funnelAnimated, setFunnelAnimated] = useState(false)
+  const [fundAnimated, setFundAnimated] = useState(false)
+  const [animatedAvailable, setAnimatedAvailable] = useState<number | null>(null)
   const heroRef = useRef<HTMLElement>(null)
+  const funnelRef = useRef<HTMLDivElement>(null)
+  const fundTankRef = useRef<HTMLDivElement>(null)
+  const heroAnimationComplete = useRef(false)
 
   // Scroll progress
   useEffect(() => {
@@ -68,6 +80,46 @@ export default function HomePage() {
     window.addEventListener('scroll', handleScroll)
     return () => window.removeEventListener('scroll', handleScroll)
   }, [])
+
+  // Funnel animation trigger on scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !funnelAnimated) {
+            setFunnelAnimated(true)
+          }
+        })
+      },
+      { threshold: 0.3 }
+    )
+
+    if (funnelRef.current) {
+      observer.observe(funnelRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [funnelAnimated])
+
+  // Fund tank animation trigger on scroll
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting && !fundAnimated) {
+            setFundAnimated(true)
+          }
+        })
+      },
+      { threshold: 0.3 }
+    )
+
+    if (fundTankRef.current) {
+      observer.observe(fundTankRef.current)
+    }
+
+    return () => observer.disconnect()
+  }, [fundAnimated])
 
   // Trigger roulette popup at 30% scroll (only once per session)
   useEffect(() => {
@@ -88,8 +140,16 @@ export default function HomePage() {
     sessionStorage.setItem('roulette_dismissed', 'true')
   }
 
-  // Animated counters
+  // Animated counters - run once on mount
   useEffect(() => {
+    // Only run animation once
+    if (heroAnimationComplete.current) return
+
+    const claimsTarget = 14046
+    const compensatedTarget = 42
+    const rateTarget = 0.3
+    const vicpTarget = 48
+
     const duration = 2000
     const startTime = performance.now()
 
@@ -99,14 +159,16 @@ export default function HomePage() {
       const easeOutQuart = 1 - Math.pow(1 - progress, 4)
 
       setHeroStats({
-        claims: Math.floor(14046 * easeOutQuart),
-        compensated: Math.floor(42 * easeOutQuart),
-        rate: parseFloat((0.3 * easeOutQuart).toFixed(1)),
-        vicp: Math.floor(48 * easeOutQuart)
+        claims: Math.floor(claimsTarget * easeOutQuart),
+        compensated: Math.floor(compensatedTarget * easeOutQuart),
+        rate: parseFloat((rateTarget * easeOutQuart).toFixed(1)),
+        vicp: Math.floor(vicpTarget * easeOutQuart)
       })
 
       if (progress < 1) {
         requestAnimationFrame(animate)
+      } else {
+        heroAnimationComplete.current = true
       }
     }
 
@@ -121,6 +183,32 @@ export default function HomePage() {
   const totalFund = 4500000000 + appropriation
   const burdenPercent = (totalCost / totalFund) * 100
   const remaining = totalFund - totalCost
+
+  // Animate the available funds counting down when fund tank comes into view
+  useEffect(() => {
+    if (!fundAnimated) return
+
+    const startValue = totalFund
+    const endValue = Math.max(remaining, 0)
+    const duration = 1800 // Match the CSS transition duration
+    const startTime = performance.now()
+
+    const animate = (currentTime: number) => {
+      const elapsed = currentTime - startTime
+      const progress = Math.min(elapsed / duration, 1)
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
+
+      const currentValue = startValue - (startValue - endValue) * easeOutQuart
+      setAnimatedAvailable(Math.max(currentValue, 0))
+
+      if (progress < 1) {
+        requestAnimationFrame(animate)
+      }
+    }
+
+    requestAnimationFrame(animate)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fundAnimated])
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000000) return `$${(value / 1000000000).toFixed(2)}B`
@@ -212,7 +300,7 @@ export default function HomePage() {
       // Get reCAPTCHA token (returns null if not configured)
       const recaptchaToken = await executeRecaptchaAction('SUBSCRIBE')
 
-      const response = await fetch('/api/subscribe', {
+      const response = await fetchWithCsrf('/api/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ...subscribeForm, recaptchaToken }),
@@ -261,19 +349,19 @@ export default function HomePage() {
           <div className="hero-stats">
             <div className="hero-stat">
               <div className="hero-stat-number">{heroStats.claims.toLocaleString()}</div>
-              <div className="hero-stat-label">CICP Claims Filed</div>
+              <div className="hero-stat-label">CICP Claims Filed<sup><a href="#citations" className="citation-link">1</a></sup></div>
             </div>
             <div className="hero-stat">
               <div className="hero-stat-number danger">{heroStats.compensated}</div>
-              <div className="hero-stat-label">Americans Compensated</div>
+              <div className="hero-stat-label">Americans Compensated<sup><a href="#citations" className="citation-link">1</a></sup></div>
             </div>
             <div className="hero-stat">
               <div className="hero-stat-number danger">{heroStats.rate}%</div>
-              <div className="hero-stat-label">CICP Approval Rate</div>
+              <div className="hero-stat-label">CICP Approval Rate<sup><a href="#citations" className="citation-link">1</a></sup></div>
             </div>
             <div className="hero-stat">
               <div className="hero-stat-number success">{heroStats.vicp}%</div>
-              <div className="hero-stat-label">VICP Approval Rate</div>
+              <div className="hero-stat-label">VICP Approval Rate<sup><a href="#citations" className="citation-link">2</a></sup></div>
             </div>
           </div>
 
@@ -295,17 +383,17 @@ export default function HomePage() {
             <span className="section-label">The CICP Reality</span>
             <h2 className="section-title">What Happens to a Claim?</h2>
             <p className="section-desc">
-              Over 14,000 Americans filed COVID-19 vaccine injury claims with CICP. Here&apos;s what happened to them.
+              Over {(getNumeric('cicp_claims_filed') || 14046).toLocaleString()} Americans have filed COVID-19 vaccine injury claims with Countermeasures Injury Compensation Program (CICP). Here&apos;s what&apos;s happened to them so far.
             </p>
 
-            <div className="waterfall-funnel">
+            <div ref={funnelRef} className={`waterfall-funnel${funnelAnimated ? ' animate' : ''}`}>
               <div className="waterfall-stage">
                 <div className="waterfall-label">
                   <h4>Claims Filed</h4>
                   <p>COVID-19 vaccine injury claims submitted</p>
                 </div>
                 <div className="waterfall-bar-container">
-                  <div className="waterfall-bar vaers">14,046 Claims</div>
+                  <div className="waterfall-bar vaers">{statistics.cicp_claims_filed?.value || '14,046'} Claims</div>
                 </div>
                 <div className="waterfall-stat">
                   <div className="number">100%</div>
@@ -319,7 +407,7 @@ export default function HomePage() {
                   <p>Claims reviewed and decided</p>
                 </div>
                 <div className="waterfall-bar-container">
-                  <div className="waterfall-bar claims">6,273</div>
+                  <div className="waterfall-bar claims">{statistics.cicp_decisions_rendered?.value || '6,273'}</div>
                 </div>
                 <div className="waterfall-stat">
                   <div className="number" style={{ color: 'var(--warning)' }}>45%</div>
@@ -333,10 +421,10 @@ export default function HomePage() {
                   <p>Actually received payment</p>
                 </div>
                 <div className="waterfall-bar-container">
-                  <div className="waterfall-bar compensated">42</div>
+                  <div className="waterfall-bar compensated" data-label={statistics.cicp_compensated?.value || '42'}></div>
                 </div>
                 <div className="waterfall-stat">
-                  <div className="number" style={{ color: 'var(--danger)' }}>0.3%</div>
+                  <div className="number" style={{ color: 'var(--danger)' }}>{statistics.cicp_approval_rate?.value || '0.3%'}</div>
                   <div className="percent">approval rate</div>
                 </div>
               </div>
@@ -344,16 +432,16 @@ export default function HomePage() {
 
             <div className="funnel-summary">
               <div className="funnel-summary-stat">
-                <div className="stat-number">55%</div>
-                <div className="stat-label">of claims still pending review</div>
+                <div className="stat-number">{statistics.cicp_pending_percent?.value || '55%'}</div>
+                <div className="stat-label">of claims still pending review<sup><a href="#citations" className="citation-link">1</a></sup></div>
               </div>
               <div className="funnel-summary-stat">
-                <div className="stat-number danger">99.3%</div>
-                <div className="stat-label">of decided claims were denied</div>
+                <div className="stat-number danger">{statistics.cicp_denial_rate?.value || '99.3%'}</div>
+                <div className="stat-label">of decided claims were denied<sup><a href="#citations" className="citation-link">1</a></sup></div>
               </div>
               <div className="funnel-summary-stat">
-                <div className="stat-number">24 mo</div>
-                <div className="stat-label">average time to decision (GAO)</div>
+                <div className="stat-number">{statistics.cicp_avg_decision_time?.value || '24 mo'}</div>
+                <div className="stat-label">average time to decision<sup><a href="#citations" className="citation-link">3</a></sup></div>
               </div>
             </div>
           </div>
@@ -372,17 +460,17 @@ export default function HomePage() {
           <div className="comparison-grid">
             <div className="comparison-card cicp">
               <span className="comparison-card-badge">CICP - COVID-19 Vaccines</span>
-              <h3>42 Paid</h3>
-              <p className="comparison-card-subtitle">of 14,046 claims filed since 2020</p>
+              <h3>{statistics.cicp_compensated?.value || '42'} Paid</h3>
+              <p className="comparison-card-subtitle">of {statistics.cicp_claims_filed?.value || '14,046'} claims filed since 2020</p>
 
               <div className="comparison-stats">
                 <div className="comparison-stat">
-                  <div className="comparison-stat-number">0.3%</div>
-                  <div className="comparison-stat-label">Approval Rate</div>
+                  <div className="comparison-stat-number">{statistics.cicp_approval_rate?.value || '0.3%'}</div>
+                  <div className="comparison-stat-label">Approval Rate<sup><a href="#citations" className="citation-link">1</a></sup></div>
                 </div>
                 <div className="comparison-stat">
-                  <div className="comparison-stat-number">$6.5M</div>
-                  <div className="comparison-stat-label">Total Paid</div>
+                  <div className="comparison-stat-number">{statistics.cicp_total_paid?.value || '$6.5M'}</div>
+                  <div className="comparison-stat-label">Total Paid<sup><a href="#citations" className="citation-link">1</a></sup></div>
                 </div>
               </div>
 
@@ -397,17 +485,17 @@ export default function HomePage() {
 
             <div className="comparison-card vicp">
               <span className="comparison-card-badge">VICP - Routine Vaccines</span>
-              <h3>12,300+ Paid</h3>
-              <p className="comparison-card-subtitle">of ~29,000 claims since 1988</p>
+              <h3>{statistics.vicp_total_compensated?.value || '12,300+'} Paid</h3>
+              <p className="comparison-card-subtitle">of {statistics.vicp_total_claims?.value || '~29,000'} claims since 1988</p>
 
               <div className="comparison-stats">
                 <div className="comparison-stat">
-                  <div className="comparison-stat-number">~48%</div>
-                  <div className="comparison-stat-label">Approval Rate</div>
+                  <div className="comparison-stat-number">{statistics.vicp_approval_rate?.value || '~48%'}</div>
+                  <div className="comparison-stat-label">Approval Rate<sup><a href="#citations" className="citation-link">2</a></sup></div>
                 </div>
                 <div className="comparison-stat">
-                  <div className="comparison-stat-number">$5.4B</div>
-                  <div className="comparison-stat-label">Total Paid</div>
+                  <div className="comparison-stat-number">{statistics.vicp_total_paid?.value || '$5.4B'}</div>
+                  <div className="comparison-stat-label">Total Paid<sup><a href="#citations" className="citation-link">2</a></sup></div>
                 </div>
               </div>
 
@@ -428,8 +516,8 @@ export default function HomePage() {
         <div className="section-inner">
           <div className="outlier-hero">
             <span className="section-label">The Real Story</span>
-            <div className="big-number">$6.5<span>M</span></div>
-            <p>CICP reports $6.5 million in total COVID compensation. But one payment tells a very different story.</p>
+            <div className="big-number">{statistics.cicp_total_paid?.value || '$6.5M'}</div>
+            <p>CICP reports {statistics.cicp_total_paid?.value || '$6.5 million'} in total COVID compensation. But one payment tells a very different story.</p>
           </div>
 
           <div className="outlier-bar-visual">
@@ -440,12 +528,12 @@ export default function HomePage() {
 
             <div className="outlier-stacked-bar">
               <div className="outlier-segment single">
-                <span className="amount">$5.94M</span>
+                <span className="amount">{statistics.cicp_outlier_payment?.value || '$5.94M'}</span>
                 <span className="label">ONE Payment (91%)</span>
               </div>
               <div className="outlier-segment others">
-                <span className="amount">$575K</span>
-                <span className="label">41 Others</span>
+                <span className="amount">{statistics.cicp_others_total?.value || '$575K'}</span>
+                <span className="label">{(getNumeric('cicp_compensated') || 42) - 1} Others</span>
               </div>
             </div>
 
@@ -455,15 +543,15 @@ export default function HomePage() {
                 <div className="legend-info">
                   <h5>Single TTS Case</h5>
                   <p>One case (Thrombosis with Thrombocytopenia Syndrome) received 91% of all COVID compensation</p>
-                  <div className="highlight">$5.94 Million</div>
+                  <div className="highlight">{statistics.cicp_outlier_payment?.value || '$5.94 Million'}</div>
                 </div>
               </div>
               <div className="outlier-legend-item">
                 <div className="legend-dot navy"></div>
                 <div className="legend-info">
                   <h5>Everyone Else Combined</h5>
-                  <p>41 other compensated individuals split the remaining 9%</p>
-                  <div className="highlight">$575,442</div>
+                  <p>{(getNumeric('cicp_compensated') || 42) - 1} other compensated individuals split the remaining 9%</p>
+                  <div className="highlight">{statistics.cicp_others_total?.value || '$575,442'}</div>
                 </div>
               </div>
             </div>
@@ -471,17 +559,17 @@ export default function HomePage() {
 
           <div className="reality-callout">
             <h3><AlertTriangle size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />Without the Outlier</h3>
-            <p>Remove that single $5.94M payment and the typical CICP compensation becomes clear. Here&apos;s what most injured Americans can actually expect:</p>
+            <p>Remove that single {statistics.cicp_outlier_payment?.value || '$5.94M'} payment and the typical CICP compensation becomes clear. Here&apos;s what most injured Americans can actually expect:</p>
             <div className="reality-stats">
               <div className="reality-stat-card cicp">
                 <div className="label">Typical CICP Payment</div>
-                <div className="number">$4,132</div>
-                <div className="note">COVID-19 median (HRSA Table 4)</div>
+                <div className="number">{statistics.cicp_median_payment?.value || '$4,132'}</div>
+                <div className="note">COVID-19 median (HRSA Table 4)<sup><a href="#citations" className="citation-link">4</a></sup></div>
               </div>
               <div className="reality-stat-card vicp">
                 <div className="label">Average VICP Award</div>
-                <div className="number">$450,000</div>
-                <div className="note">2006-2020 average (HRSA)</div>
+                <div className="number">{statistics.vicp_average_award?.value || '$450,000'}</div>
+                <div className="note">2006-2020 average (HRSA)<sup><a href="#citations" className="citation-link">2</a></sup></div>
               </div>
             </div>
           </div>
@@ -493,17 +581,17 @@ export default function HomePage() {
               <div className="median-bar-track">
                 <div className="median-bar-fill cicp"></div>
               </div>
-              <div className="median-bar-value">$4,132</div>
+              <div className="median-bar-value">{statistics.cicp_median_payment?.value || '$4,132'}</div>
             </div>
             <div className="median-bar-row">
               <div className="median-bar-label">Average VICP</div>
               <div className="median-bar-track">
                 <div className="median-bar-fill vicp"></div>
               </div>
-              <div className="median-bar-value">$450,000</div>
+              <div className="median-bar-value">{statistics.vicp_average_award?.value || '$450,000'}</div>
             </div>
             <div className="median-multiplier">
-              Average VICP award is <span>109× higher</span> than typical CICP payment
+              Average VICP award is <span>109× higher</span> than typical CICP payment<sup><a href="#citations" className="citation-link">2,4</a></sup>
             </div>
           </div>
         </div>
@@ -654,7 +742,7 @@ export default function HomePage() {
                     value={calcValues.approval}
                     onChange={(e) => handleMainCalcChange('approval', parseInt(e.target.value))}
                   />
-                  <div className="calc-note">VICP historical average: ~48%</div>
+                  <div className="calc-note">VICP historical average: ~48%<sup><a href="#citations" className="citation-link">2</a></sup></div>
                 </div>
 
                 <div className="calc-field">
@@ -671,7 +759,7 @@ export default function HomePage() {
                     value={calcValues.award}
                     onChange={(e) => handleMainCalcChange('award', parseInt(e.target.value))}
                   />
-                  <div className="calc-note">VICP historical average: ~$450,000</div>
+                  <div className="calc-note">VICP historical average: ~$450,000<sup><a href="#citations" className="citation-link">2</a></sup></div>
                 </div>
 
                 <div className="calc-field">
@@ -732,14 +820,12 @@ export default function HomePage() {
                 <div className="balance">{formatCurrency(totalFund)}</div>
               </div>
 
-              <div className="fund-tank">
-                <div className="fund-burden" style={{ height: `${Math.min(burdenPercent, 100)}%` }}>
-                  <div className="burden-label">Est. COVID Claims</div>
-                  <div className="burden-amount">{formatCurrency(totalCost)}</div>
+              <div className={`fund-tank ${fundAnimated ? 'animated' : ''}`} ref={fundTankRef}>
+                <div className="fund-burden" style={{ height: fundAnimated ? `${Math.min(burdenPercent, 100)}%` : '0%' }}>
+                  <div className="fund-text">Est. COVID Claims: <span>{formatCurrency(totalCost)}</span></div>
                 </div>
                 <div className="fund-available">
-                  <div className="available-label">Available Funds</div>
-                  <div className="available-amount">{formatCurrency(Math.max(remaining, 0))}</div>
+                  <div className="fund-text">Available Funds: <span>{formatCurrency(animatedAvailable !== null ? animatedAvailable : totalFund)}</span></div>
                 </div>
                 <div className="fund-scale">
                   <div className="fund-scale-mark">{formatCurrency(totalFund)}</div>
@@ -949,7 +1035,7 @@ export default function HomePage() {
       </section>
 
       {/* Subscribe Section */}
-      <section className="subscribe-section">
+      <section className="subscribe-section" id="subscribe">
         <div className="subscribe-inner">
           <div className="subscribe-content">
             <h2 className="subscribe-title">Stay Informed</h2>
@@ -1007,7 +1093,7 @@ export default function HomePage() {
       </section>
 
       {/* Footer */}
-      <Footer showDataSources />
+      <Footer />
 
       {/* CICP Roulette Modal */}
       {rouletteOpen && (

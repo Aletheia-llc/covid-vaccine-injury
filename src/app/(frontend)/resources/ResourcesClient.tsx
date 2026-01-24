@@ -1,8 +1,9 @@
 'use client'
 
 import React, { useState, useMemo } from 'react'
+import Link from 'next/link'
 import { track } from '@vercel/analytics'
-import { BarChart3, ClipboardList, RefreshCw, Building2, TrendingUp, FileText, Search, Scale } from 'lucide-react'
+import { BarChart3, ClipboardList, RefreshCw, Building2, TrendingUp, FileText, Search, Scale, Mail } from 'lucide-react'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
 
@@ -313,6 +314,18 @@ export default function ResourcesClient({ resources, counts }: ResourcesClientPr
                 </div>
               </a>
             </div>
+          </div>
+
+          {/* Sign Up CTA */}
+          <div className="resources-signup-cta">
+            <Mail size={24} />
+            <div>
+              <h4>Stay Updated</h4>
+              <p>Get the latest data and advocacy news delivered to your inbox.</p>
+            </div>
+            <Link href="/#subscribe" className="signup-cta-btn" onClick={() => track('cta_clicked', { location: 'resources', type: 'sign_up' })}>
+              Sign Up
+            </Link>
           </div>
         </div>
       </main>

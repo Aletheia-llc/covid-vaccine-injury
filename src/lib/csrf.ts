@@ -98,6 +98,16 @@ export async function getCsrfFromCookie(): Promise<string | null> {
  */
 export async function validateCsrfToken(request: Request): Promise<boolean> {
   try {
+    // In development, fall back to origin validation if no cookie
+    // This helps during hot reload when cookies may be cleared
+    if (process.env.NODE_ENV === 'development') {
+      const origin = request.headers.get('origin')
+      const referer = request.headers.get('referer')
+      if (origin?.includes('localhost') || referer?.includes('localhost')) {
+        return true
+      }
+    }
+
     // Get token from cookie
     const cookieToken = await getCsrfFromCookie()
     if (!cookieToken) return false

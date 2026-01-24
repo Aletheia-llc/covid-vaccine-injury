@@ -33,32 +33,13 @@ interface CICPRouletteProps {
   onClose?: () => void;
 }
 
-import { UI } from '@/lib/constants'
-
 // Sound effects - uses audio files from /public/sounds/
 // Falls back to Web Audio API synthesis if files don't exist
-const SPIN_DURATION = UI.ROULETTE_SPIN_DURATION_MS;
-
-// Store reference to current spin audio so we can stop it precisely
-let currentSpinAudio: HTMLAudioElement | null = null;
-let spinFadeInterval: ReturnType<typeof setInterval> | null = null;
+const SPIN_DURATION = 2000; // 2 seconds to match animation
 
 const createAudioContext = () => {
   if (typeof window === 'undefined') return null;
   return new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-};
-
-// Stop the spin sound immediately
-const stopSpinSound = () => {
-  if (spinFadeInterval) {
-    clearInterval(spinFadeInterval);
-    spinFadeInterval = null;
-  }
-  if (currentSpinAudio) {
-    currentSpinAudio.pause();
-    currentSpinAudio.currentTime = 0;
-    currentSpinAudio = null;
-  }
 };
 
 const playSound = (soundKey: 'click' | 'spin' | 'denied' | 'approved') => {
@@ -66,40 +47,31 @@ const playSound = (soundKey: 'click' | 'spin' | 'denied' | 'approved') => {
 
   const audioFile = `/sounds/${soundKey}.mp3`;
   const audio = new Audio(audioFile);
-  audio.volume = 0.5;
+  audio.volume = 0.25;
 
-  // For spin sound, track it so we can stop it when animation ends
+  // For spin sound, fade out and stop at SPIN_DURATION
   if (soundKey === 'spin') {
-    // Stop any existing spin sound first
-    stopSpinSound();
-
-    currentSpinAudio = audio;
-
     audio.play().then(() => {
-      // Start fade out 400ms before animation ends
+      // Fade out near the end
       setTimeout(() => {
-        if (currentSpinAudio === audio) {
-          spinFadeInterval = setInterval(() => {
-            if (currentSpinAudio && currentSpinAudio.volume > 0.05) {
-              currentSpinAudio.volume = Math.max(0, currentSpinAudio.volume - 0.15);
-            } else {
-              stopSpinSound();
-            }
-          }, 40); // Faster fade: 40ms intervals, 0.15 decrease = ~130ms to fade
-        }
-      }, SPIN_DURATION - 400);
+        const fadeOut = setInterval(() => {
+          if (audio.volume > 0.05) {
+            audio.volume = Math.max(0, audio.volume - 0.1);
+          } else {
+            clearInterval(fadeOut);
+            audio.pause();
+            audio.currentTime = 0;
+          }
+        }, 50);
+      }, SPIN_DURATION - 300); // Start fade 300ms before end
     }).catch(() => {
-      currentSpinAudio = null;
+      // Fall back to synthesized sound
       playSynthesizedSound(soundKey);
     });
     return;
   }
 
-  // For other sounds, stop spin sound first then play
-  if (soundKey === 'denied' || soundKey === 'approved') {
-    stopSpinSound();
-  }
-
+  // For other sounds, just play normally
   audio.play().catch(() => {
     playSynthesizedSound(soundKey);
   });
@@ -1231,26 +1203,49 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false, onClose })
             COVID vaccine injuries deserve the same fair treatment as other vaccines.
             Help us transfer claims from CICP to VICP.
           </p>
-          <Link
-            href="/#action"
-            className="cta-btn"
-            onClick={() => {
-              playSound('click');
-              if (onClose) onClose();
-            }}
-            style={{
-              display: 'inline-block',
-              background: 'linear-gradient(135deg, #c4a052 0%, #a08042 100%)',
-              color: '#0d1b2a',
-              padding: compact ? '8px 20px' : '12px 32px',
-              borderRadius: '100px',
-              fontSize: compact ? '11px' : '14px',
-              fontWeight: 700,
-              textDecoration: 'none',
-              textTransform: 'uppercase',
-              letterSpacing: '1px',
-            }}
-          >Take Action</Link>
+          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <Link
+              href="/#action"
+              className="cta-btn"
+              onClick={() => {
+                playSound('click');
+                if (onClose) onClose();
+              }}
+              style={{
+                display: 'inline-block',
+                background: 'linear-gradient(135deg, #c4a052 0%, #a08042 100%)',
+                color: '#0d1b2a',
+                padding: compact ? '8px 20px' : '12px 32px',
+                borderRadius: '100px',
+                fontSize: compact ? '11px' : '14px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+              }}
+            >Take Action</Link>
+            <Link
+              href="/#subscribe"
+              className="cta-btn"
+              onClick={() => {
+                playSound('click');
+                if (onClose) onClose();
+              }}
+              style={{
+                display: 'inline-block',
+                background: 'transparent',
+                border: '2px solid #c4a052',
+                color: '#c4a052',
+                padding: compact ? '6px 18px' : '10px 30px',
+                borderRadius: '100px',
+                fontSize: compact ? '11px' : '14px',
+                fontWeight: 700,
+                textDecoration: 'none',
+                textTransform: 'uppercase',
+                letterSpacing: '1px',
+              }}
+            >Sign Up</Link>
+          </div>
         </div>
       </div>
     </>

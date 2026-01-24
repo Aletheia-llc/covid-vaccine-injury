@@ -6,10 +6,10 @@ This document describes the testing strategy, tools, and procedures for the U.S.
 
 | Test Type | Framework | Location | Command |
 |-----------|-----------|----------|---------|
-| Unit Tests | Vitest | `src/**/*.test.ts` | `npm run test:unit` |
-| E2E Tests | Playwright | `tests/e2e/` | `npm run test:e2e` |
-| Type Checking | TypeScript | N/A | `npm run typecheck` |
-| Linting | ESLint | N/A | `npm run lint` |
+| Unit Tests | Vitest 3.2.3 | `src/**/*.test.ts` | `npm run test:unit` |
+| E2E Tests | Playwright 1.56.1 | `tests/e2e/` | `npm run test:e2e` |
+| Type Checking | TypeScript 5.7.3 | N/A | `npm run typecheck` |
+| Linting | ESLint 9.x | N/A | `npm run lint` |
 
 ## Quick Start
 
@@ -45,27 +45,45 @@ Place test files next to the code they test:
 src/lib/
 ├── sanitize.ts
 ├── sanitize.test.ts    # Tests for sanitize.ts
+├── csrf.ts
+├── csrf.test.ts        # Tests for csrf.ts
 ├── rate-limit.ts
 ├── rate-limit.test.ts  # Tests for rate-limit.ts
+├── recaptcha.ts
+├── recaptcha.test.ts   # Tests for recaptcha.ts
+├── constants.ts
+├── constants.test.ts   # Tests for constants.ts
+├── env-validation.ts
+├── env-validation.test.ts
+└── validation.ts
+    validation.test.ts
 ```
 
 ### Writing Unit Tests
 
 ```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { sanitizeEmail } from './sanitize'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { sanitizeEmail, sanitizeName } from './sanitize'
 
 describe('sanitizeEmail', () => {
   it('returns valid email unchanged', () => {
     expect(sanitizeEmail('user@example.com')).toBe('user@example.com')
   })
 
-  it('returns null for invalid email', () => {
-    expect(sanitizeEmail('not-an-email')).toBeNull()
+  it('converts to lowercase', () => {
+    expect(sanitizeEmail('User@Example.COM')).toBe('user@example.com')
+  })
+
+  it('returns empty string for invalid email', () => {
+    expect(sanitizeEmail('not-an-email')).toBe('')
   })
 
   it('trims whitespace', () => {
     expect(sanitizeEmail('  user@example.com  ')).toBe('user@example.com')
+  })
+
+  it('handles undefined input', () => {
+    expect(sanitizeEmail(undefined)).toBe('')
   })
 })
 ```
@@ -75,6 +93,8 @@ describe('sanitizeEmail', () => {
 Mock external dependencies and environment variables:
 
 ```typescript
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+
 // Mock a module
 vi.mock('./logger', () => ({
   log: {
@@ -83,11 +103,37 @@ vi.mock('./logger', () => ({
     error: vi.fn(),
     security: vi.fn(),
   },
+  createRequestLogger: vi.fn(() => ({
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  })),
 }))
 
 // Mock environment variables
 beforeEach(() => {
   vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://test-redis.upstash.io')
+  vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'test-token')
+})
+
+afterEach(() => {
+  vi.unstubAllEnvs()
+})
+```
+
+### Testing Async Functions
+
+```typescript
+describe('checkRateLimit', () => {
+  it('returns success when under limit', async () => {
+    const result = await checkRateLimit('test-id', {
+      windowMs: 60000,
+      maxRequests: 10,
+    })
+
+    expect(result.success).toBe(true)
+    expect(result.remaining).toBeGreaterThan(0)
+  })
 })
 ```
 
@@ -106,7 +152,7 @@ npm run test:e2e:ui         # Interactive Playwright UI
 ```
 tests/e2e/
 ├── smoke.spec.ts       # Basic smoke tests (health, csrf, page loads)
-└── flows/              # User flow tests (future)
+└── flows/              # User flow tests
     ├── survey.spec.ts
     ├── contact.spec.ts
     └── donate.spec.ts
@@ -130,6 +176,16 @@ test.describe('Survey Flow', () => {
     // Verify success
     await expect(page.getByText('Thank you')).toBeVisible()
   })
+
+  test('shows validation errors for required fields', async ({ page }) => {
+    await page.goto('/survey')
+
+    // Submit without filling fields
+    await page.getByRole('button', { name: 'Submit' }).click()
+
+    // Verify error message
+    await expect(page.getByText('required')).toBeVisible()
+  })
 })
 ```
 
@@ -146,47 +202,38 @@ See `playwright.config.ts` for configuration. Key settings:
 
 Security-critical code requires dedicated tests. These verify that security controls work correctly.
 
-### Required Security Tests
+### CSRF Protection Tests
 
 ```typescript
-// tests/security/csrf.test.ts
 describe('CSRF Protection', () => {
-  test('rejects request without token', async () => {
-    const response = await fetch('/api/survey', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ q1: 'yes' }),
-    })
-    expect(response.status).toBe(403)
+  it('generates valid token format', () => {
+    const token = generateCsrfToken()
+    const parts = token.split('.')
+
+    expect(parts).toHaveLength(3)
+    expect(parts[0]).toMatch(/^\d+$/)  // timestamp
+    expect(parts[1]).toMatch(/^[a-f0-9]+$/)  // random hex
+    expect(parts[2]).toMatch(/^[a-f0-9]+$/)  // signature
   })
 
-  test('rejects request with invalid token', async () => {
-    const response = await fetch('/api/survey', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-csrf-token': 'invalid-token',
-      },
-      body: JSON.stringify({ q1: 'yes' }),
-    })
-    expect(response.status).toBe(403)
+  it('verifies valid token', () => {
+    const token = generateCsrfToken()
+    expect(verifyCsrfToken(token)).toBe(true)
   })
 
-  test('accepts request with valid token', async () => {
-    // Get valid token first
-    const csrfResponse = await fetch('/api/csrf')
-    const { csrfToken } = await csrfResponse.json()
+  it('rejects expired token', () => {
+    // Token from 2 hours ago
+    const oldTimestamp = Date.now() - 2 * 60 * 60 * 1000
+    const token = `${oldTimestamp}.abc123.signature`
 
-    const response = await fetch('/api/survey', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-csrf-token': csrfToken,
-      },
-      credentials: 'include',
-      body: JSON.stringify({ q1: 'yes' }),
-    })
-    expect(response.status).toBe(200)
+    expect(verifyCsrfToken(token)).toBe(false)
+  })
+
+  it('rejects tampered token', () => {
+    const token = generateCsrfToken()
+    const tampered = token.replace('a', 'b')
+
+    expect(verifyCsrfToken(tampered)).toBe(false)
   })
 })
 ```
@@ -195,22 +242,37 @@ describe('CSRF Protection', () => {
 
 ```typescript
 describe('Rate Limiting', () => {
-  test('allows requests under limit', async () => {
-    // First request should succeed
-    const response = await fetch('/api/survey', { method: 'POST', ... })
-    expect(response.status).toBe(200)
+  it('allows requests under limit', async () => {
+    const result = await checkRateLimit('test-user', {
+      windowMs: 60000,
+      maxRequests: 5,
+    })
+
+    expect(result.success).toBe(true)
+    expect(result.remaining).toBe(4)
   })
 
-  test('blocks requests over limit', async () => {
-    // Make max requests
-    for (let i = 0; i < 5; i++) {
-      await fetch('/api/survey', { method: 'POST', ... })
-    }
+  it('blocks requests over limit', async () => {
+    const config = { windowMs: 60000, maxRequests: 2 }
+
+    // Use up the limit
+    await checkRateLimit('test-user-2', config)
+    await checkRateLimit('test-user-2', config)
 
     // Next request should be blocked
-    const response = await fetch('/api/survey', { method: 'POST', ... })
-    expect(response.status).toBe(429)
-    expect(response.headers.get('Retry-After')).toBeDefined()
+    const result = await checkRateLimit('test-user-2', config)
+
+    expect(result.success).toBe(false)
+    expect(result.remaining).toBe(0)
+  })
+
+  it('includes retry-after time', async () => {
+    const config = { windowMs: 60000, maxRequests: 1 }
+
+    await checkRateLimit('test-user-3', config)
+    const result = await checkRateLimit('test-user-3', config)
+
+    expect(result.resetTime).toBeGreaterThan(Date.now())
   })
 })
 ```
@@ -219,19 +281,39 @@ describe('Rate Limiting', () => {
 
 ```typescript
 describe('Input Sanitization', () => {
-  test('removes script tags', () => {
-    const input = '<script>alert("xss")</script>Hello'
-    expect(sanitizeComment(input)).toBe('Hello')
+  describe('sanitizeName', () => {
+    it('allows alphanumeric and spaces', () => {
+      expect(sanitizeName('John Doe')).toBe('John Doe')
+    })
+
+    it('removes special characters', () => {
+      expect(sanitizeName('John<script>alert(1)</script>')).toBe('Johnscriptalert1script')
+    })
+
+    it('truncates to max length', () => {
+      const longName = 'a'.repeat(150)
+      expect(sanitizeName(longName).length).toBeLessThanOrEqual(100)
+    })
   })
 
-  test('removes javascript: protocol', () => {
-    const input = '<a href="javascript:alert(1)">click</a>'
-    expect(sanitizeComment(input)).not.toContain('javascript:')
+  describe('sanitizeEmail', () => {
+    it('normalizes to lowercase', () => {
+      expect(sanitizeEmail('USER@EXAMPLE.COM')).toBe('user@example.com')
+    })
+
+    it('rejects invalid format', () => {
+      expect(sanitizeEmail('not-an-email')).toBe('')
+    })
   })
 
-  test('handles nested tags', () => {
-    const input = '<div><script>bad</script></div>'
-    expect(sanitizeComment(input)).not.toContain('<script>')
+  describe('sanitizeZip', () => {
+    it('extracts digits only', () => {
+      expect(sanitizeZip('90210-1234')).toBe('90210')
+    })
+
+    it('returns empty for too short', () => {
+      expect(sanitizeZip('123')).toBe('')
+    })
   })
 })
 ```
@@ -242,10 +324,9 @@ describe('Input Sanitization', () => {
 
 | Area | Coverage | Target |
 |------|----------|--------|
-| Overall | ~40% | 70% |
-| Security libs | ~60% | 90% |
-| API routes | ~20% | 70% |
-| Components | ~10% | 50% |
+| Security libs | ~70% | 90% |
+| API routes | ~40% | 70% |
+| Components | ~20% | 50% |
 
 ### Priority Areas
 
@@ -254,15 +335,17 @@ describe('Input Sanitization', () => {
    - `src/lib/rate-limit.ts`
    - `src/lib/sanitize.ts`
    - `src/lib/auth.ts`
+   - `src/lib/validation.ts`
 
 2. **Should have 70%+ coverage:**
    - All API routes (`src/app/api/`)
    - `src/lib/recaptcha.ts`
-   - `src/lib/validation.ts`
+   - `src/lib/env-validation.ts`
 
 3. **Nice to have:**
    - React components
    - Utility functions
+   - Animation hooks
 
 ### Viewing Coverage
 
@@ -329,13 +412,21 @@ For consistent test data, use fixtures:
 export const validSurveyResponse = {
   q1: 'yes',
   q2: 'yes',
-  q3: 'me',
+  q3: 'severe',
   email: 'test@example.com',
-  zip: '90210',
+  zipCode: '90210',
 }
 
 export const invalidSurveyResponse = {
   q1: 'invalid-value',
+}
+
+// tests/fixtures/subscribe.ts
+export const validSubscription = {
+  name: 'John Doe',
+  email: 'john@example.com',
+  phone: '5551234567',
+  zip: '90210',
 }
 ```
 
@@ -352,6 +443,9 @@ npx vitest run -t "sanitizeEmail"
 
 # Debug with console output
 npx vitest run --reporter=verbose
+
+# Run single test in isolation
+npx vitest run src/lib/csrf.test.ts -t "generates valid token"
 ```
 
 ### E2E Tests
@@ -365,6 +459,9 @@ npx playwright test --trace on
 
 # Debug with Playwright Inspector
 npx playwright test --debug
+
+# View trace after test failure
+npx playwright show-trace trace.zip
 ```
 
 ## Troubleshooting
@@ -378,15 +475,21 @@ npx playwright test --debug
 **E2E tests timeout waiting for server**
 - Ensure no other process is using port 3000
 - Check that `DATABASE_URL` is set correctly
+- Try running `npm run dev` manually first
 
 **Rate limit tests are flaky**
-- Use unique identifiers per test: `test-${Date.now()}-${testId}`
+- Use unique identifiers per test: `test-${Date.now()}-${Math.random()}`
 - Reset rate limit store in `beforeEach`
+- Use in-memory rate limiter for tests
 
 **Tests pass locally but fail in CI**
 - Check for environment variable differences
 - Ensure tests don't depend on local state
 - Use `CI=true` locally to match CI behavior
+
+**CSRF tests fail with "Invalid signature"**
+- Ensure `PAYLOAD_SECRET` is set consistently
+- Mock the secret in tests for reproducibility
 
 ## Adding New Tests
 
@@ -398,6 +501,7 @@ npx playwright test --debug
 - [ ] Edge cases are covered
 - [ ] Error cases are covered
 - [ ] Mocks are properly cleaned up
+- [ ] Async operations are properly awaited
 
 ### Test Naming Convention
 
@@ -407,4 +511,30 @@ describe('functionName', () => {
   it('returns null when input is invalid', () => {})
   it('throws error when required param missing', () => {})
 })
+```
+
+### Testing API Routes
+
+For API route tests, create a test helper:
+
+```typescript
+// tests/helpers/api.ts
+import { NextRequest } from 'next/server'
+
+export function createMockRequest(options: {
+  method?: string
+  body?: object
+  headers?: Record<string, string>
+}): NextRequest {
+  const { method = 'POST', body, headers = {} } = options
+
+  return new NextRequest('http://localhost:3000/api/test', {
+    method,
+    headers: {
+      'Content-Type': 'application/json',
+      ...headers,
+    },
+    body: body ? JSON.stringify(body) : undefined,
+  })
+}
 ```

@@ -3,25 +3,21 @@
 import Link from 'next/link'
 import { Scale } from 'lucide-react'
 
-interface FooterProps {
-  showDataSources?: boolean
-}
-
-export default function Footer({ showDataSources = false }: FooterProps) {
+export default function Footer() {
   return (
     <footer className="footer">
       <div className="footer-logo">
         <Scale size={20} />
         <span>U.S. Covid Vaccine Injuries</span>
       </div>
-      {showDataSources && (
-        <p className="footer-text" style={{ fontSize: '13px', maxWidth: '800px', margin: '0 auto 12px' }}>
-          <strong>Data Sources:</strong> CICP median ($4,132) calculated from <a href="https://www.hrsa.gov/cicp/cicp-data/table-4">HRSA Table 4</a> (Dec 2025, n=42 COVID claims).
-          VICP average ($450K) from <a href="https://www.hrsa.gov/vaccine-compensation/data">HRSA VICP Statistics</a> (2006-2020).
-          Additional data from GAO-25-107368 and CRS R46982.
-        </p>
-      )}
       <p className="footer-text">Advocating for fair compensation for all vaccine-injured Americans.</p>
+      <div id="citations" className="footer-citations">
+        <p className="citations-title">Citations</p>
+        <p className="citation"><sup>1</sup> Health Resources &amp; Services Administration. &ldquo;CICP Data.&rdquo; COVID-19 Covered Countermeasures claims statistics. <a href="https://www.hrsa.gov/cicp/cicp-data" target="_blank" rel="noopener noreferrer">https://www.hrsa.gov/cicp/cicp-data</a></p>
+        <p className="citation"><sup>2</sup> Health Resources &amp; Services Administration. &ldquo;National Vaccine Injury Compensation Program Data.&rdquo; VICP statistics and compensation data. <a href="https://www.hrsa.gov/vaccine-compensation/data" target="_blank" rel="noopener noreferrer">https://www.hrsa.gov/vaccine-compensation/data</a></p>
+        <p className="citation"><sup>3</sup> U.S. Government Accountability Office. &ldquo;COVID-19: HRSA Should Address Lengthy Processing of Injury Compensation Claims.&rdquo; GAO-25-107368. <a href="https://www.gao.gov/products/gao-25-107368" target="_blank" rel="noopener noreferrer">https://www.gao.gov/products/gao-25-107368</a></p>
+        <p className="citation"><sup>4</sup> Health Resources &amp; Services Administration. &ldquo;CICP Data - Table 4: COVID-19 Covered Countermeasures.&rdquo; Median payment calculation from compensated claims. <a href="https://www.hrsa.gov/cicp/cicp-data/table-4" target="_blank" rel="noopener noreferrer">https://www.hrsa.gov/cicp/cicp-data/table-4</a></p>
+      </div>
       <p className="footer-disclaimer">
         This website is for informational and advocacy purposes only. Nothing on this site
         constitutes legal, medical, or financial advice. Consult qualified professionals

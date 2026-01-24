@@ -214,35 +214,8 @@ export function useScrollAnimations() {
       observer.observe(medianComparison);
     }
 
-    // Waterfall funnel bars animation - smooth fill from left
-    const waterfallBars = document.querySelectorAll('.waterfall-bar');
-    if (waterfallBars.length) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              const bar = entry.target as HTMLElement;
-              bar.style.transform = 'scaleX(0)';
-              bar.style.transformOrigin = 'left';
-              bar.style.transition = 'transform 1.2s cubic-bezier(0.25, 0.1, 0.25, 1)';
-
-              setTimeout(() => {
-                bar.style.transform = 'scaleX(1)';
-              }, 100);
-
-              observer.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.2 }
-      );
-
-      waterfallBars.forEach((bar, index) => {
-        setTimeout(() => {
-          observer.observe(bar);
-        }, index * 250);
-      });
-    }
+    // Waterfall funnel bars animation - handled by CSS in page.tsx via funnelAnimated state
+    // The CSS clip-path animation triggers when .animate class is added to .waterfall-funnel
 
     // Fund tank animation - CSS class based for smooth transition
     const fundTank = document.querySelector('.fund-tank');

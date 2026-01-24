@@ -46,11 +46,12 @@ export async function POST(request: NextRequest) {
 
     const body = await request.json()
 
-    // Verify reCAPTCHA token - required when reCAPTCHA is configured
+    // Verify reCAPTCHA token - required in production when reCAPTCHA is configured
     const recaptchaConfigured = !!(process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY && process.env.RECAPTCHA_SECRET_KEY)
     const recaptchaToken = body.recaptchaToken
+    const isDevelopment = process.env.NODE_ENV === 'development'
 
-    if (recaptchaConfigured) {
+    if (recaptchaConfigured && !isDevelopment) {
       if (!recaptchaToken) {
         log.warn({ event: 'subscribe_recaptcha_missing' }, 'reCAPTCHA token required but not provided')
         return NextResponse.json(
@@ -99,65 +100,58 @@ export async function POST(request: NextRequest) {
 
     const payload = await getPayload({ config })
 
-    // Try to create first, then handle duplicate key error
-    // This avoids the race condition of check-then-act pattern
-    try {
-      await payload.create({
-        collection: 'subscribers',
-        data: {
-          name,
-          email,
-          phone: phone || undefined,
-          zip: zip || undefined,
-          source: 'website',
-          status: 'active',
-        },
-      })
-      return NextResponse.json(
-        { success: true, message: 'Thank you for subscribing!' },
-        { headers: { 'X-Request-ID': requestId } }
-      )
-    } catch (createError) {
-      // Check if this is a duplicate key error
-      const errorMessage = createError instanceof Error ? createError.message : String(createError)
-      const isDuplicate = errorMessage.includes('unique') ||
-                          errorMessage.includes('duplicate') ||
-                          errorMessage.includes('already exists')
+    // Check if email already exists first
+    const existing = await payload.find({
+      collection: 'subscribers',
+      where: { email: { equals: email } },
+      limit: 1,
+    })
 
-      if (isDuplicate) {
-        // Email already exists - check if unsubscribed and can be reactivated
-        const existing = await payload.find({
+    if (existing.docs.length > 0) {
+      const subscriber = existing.docs[0]
+
+      // If unsubscribed, reactivate
+      if (subscriber.status === 'unsubscribed') {
+        await payload.update({
           collection: 'subscribers',
-          where: { email: { equals: email } },
-          limit: 1,
+          id: subscriber.id,
+          data: {
+            name,
+            phone: phone || undefined,
+            zip: zip || undefined,
+            status: 'active',
+          },
         })
-
-        if (existing.docs.length > 0 && existing.docs[0].status === 'unsubscribed') {
-          await payload.update({
-            collection: 'subscribers',
-            id: existing.docs[0].id,
-            data: {
-              name,
-              phone: phone || undefined,
-              zip: zip || undefined,
-              status: 'active',
-            },
-          })
-          return NextResponse.json(
-            { success: true, message: 'Welcome back! Your subscription has been reactivated.' },
-            { headers: { 'X-Request-ID': requestId } }
-          )
-        }
-
         return NextResponse.json(
-          { error: 'This email is already subscribed' },
-          { status: 400, headers: { 'X-Request-ID': requestId } }
+          { success: true, message: 'Welcome back! Your subscription has been reactivated.' },
+          { headers: { 'X-Request-ID': requestId } }
         )
       }
 
-      // Not a duplicate error - rethrow
-      throw createError
+      // Already subscribed and active
+      return NextResponse.json(
+        { error: 'This email is already subscribed' },
+        { status: 400, headers: { 'X-Request-ID': requestId } }
+      )
     }
+
+    // Create new subscriber
+    await payload.create({
+      collection: 'subscribers',
+      data: {
+        name,
+        email,
+        phone: phone || undefined,
+        zip: zip || undefined,
+        source: 'website',
+        status: 'active',
+      },
+    })
+
+    return NextResponse.json(
+      { success: true, message: 'Thank you for subscribing!' },
+      { headers: { 'X-Request-ID': requestId } }
+    )
   } catch (error) {
     log.error({ err: error, event: 'subscribe_failed' }, 'Subscribe failed')
     return NextResponse.json(

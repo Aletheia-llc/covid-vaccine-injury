@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { timingSafeEqual, createHmac } from 'crypto'
 import { reportError } from '@/lib/error-reporting'
 import { log } from '@/lib/logger'
+import { notifyDonationReceived } from '@/lib/n8n'
 
 // Environment variables
 const STRIPE_WEBHOOK_SECRET = process.env.STRIPE_WEBHOOK_SECRET
@@ -121,17 +122,22 @@ export async function POST(request: NextRequest) {
       const session = stripeEvent.data.object
       const email = session.customer_details?.email
       const amount = session.amount_total ? session.amount_total / 100 : 0
+      // Check if this is a subscription (recurring) or one-time payment
+      const isRecurring = (stripeEvent.data.object as { mode?: string }).mode === 'subscription'
 
       log.success('donation_received', {
         eventId: stripeEvent.id,
         email: email ? `${email.substring(0, 3)}***` : 'unknown',
         amount,
+        recurring: isRecurring,
       })
 
-      // Here you could:
-      // - Store donation in database
-      // - Send confirmation email
-      // - Update analytics
+      // Notify n8n for email alerts and tracking
+      await notifyDonationReceived({
+        amount,
+        recurring: isRecurring,
+        email,
+      })
 
       return NextResponse.json({
         success: true,

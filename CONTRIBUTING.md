@@ -152,12 +152,14 @@ function SurveyForm() {
 Follow the established security pattern:
 
 ```typescript
+import { NextRequest, NextResponse } from 'next/server'
 import { validateCsrfToken } from '@/lib/csrf'
 import { checkRateLimit, getClientIP } from '@/lib/rate-limit'
 import { createRequestLogger } from '@/lib/logger'
+import { RATE_LIMITS, REQUEST_SIZE_LIMITS } from '@/lib/constants'
 
 export async function POST(request: NextRequest) {
-  // 1. Request ID for tracing
+  // 1. Generate request ID for tracing
   const requestId = crypto.randomUUID()
   const log = createRequestLogger({ requestId, path: '/api/endpoint', method: 'POST' })
 
@@ -171,12 +173,15 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // 3. Rate limiting
+  // 3. Request size check
+  const contentLength = request.headers.get('content-length')
+  if (contentLength && parseInt(contentLength, 10) > REQUEST_SIZE_LIMITS.ENDPOINT) {
+    return NextResponse.json({ error: 'Request too large' }, { status: 413 })
+  }
+
+  // 4. Rate limiting
   const clientIP = getClientIP(request)
-  const rateLimit = await checkRateLimit(`endpoint:${clientIP}`, {
-    windowMs: 60 * 60 * 1000,  // 1 hour
-    maxRequests: 5
-  })
+  const rateLimit = await checkRateLimit(`endpoint:${clientIP}`, RATE_LIMITS.ENDPOINT)
   if (!rateLimit.success) {
     const retryAfter = Math.ceil((rateLimit.resetTime - Date.now()) / 1000)
     return NextResponse.json(
@@ -185,16 +190,19 @@ export async function POST(request: NextRequest) {
     )
   }
 
-  // 4. Parse and validate input
+  // 5. Parse and validate input
   const body = await request.json()
 
-  // 5. Sanitize user input
-  const sanitizedData = sanitizeInput(body)
-
-  // 6. Business logic
+  // 6. reCAPTCHA verification (if configured)
   // ...
 
-  // 7. Return response with request ID
+  // 7. Input sanitization
+  // ...
+
+  // 8. Business logic
+  // ...
+
+  // 9. Return response with request ID
   return NextResponse.json(
     { success: true },
     { headers: { 'X-Request-ID': requestId } }
@@ -229,14 +237,35 @@ export async function POST(request: NextRequest) {
 Use the structured logger, never `console.log`:
 
 ```typescript
-import { log } from '@/lib/logger'
+import { log, createRequestLogger } from '@/lib/logger'
 
-// Good
+// Global logger
 log.info('survey_submitted', { zipCode, questionCount: 9 })
 log.error('database_error', { error: err.message })
+log.security('rate_limit_exceeded', { ip: clientIP })
 
-// Bad
-console.log('Survey submitted')
+// Request-scoped logger (includes requestId)
+const routeLog = createRequestLogger({ requestId, path, method })
+routeLog.info('request_received', { body: sanitizedBody })
+routeLog.warn('validation_failed', { field: 'email' })
+```
+
+### Constants
+
+Use centralized constants from `src/lib/constants.ts`:
+
+```typescript
+import { RATE_LIMITS, REQUEST_SIZE_LIMITS, VALIDATION } from '@/lib/constants'
+
+// Good - using centralized config
+if (name.length > VALIDATION.MAX_NAME_LENGTH) {
+  return error
+}
+
+// Bad - magic numbers
+if (name.length > 100) {
+  return error
+}
 ```
 
 ## Testing
@@ -257,6 +286,8 @@ Place test files next to the code they test:
 src/lib/
 ├── sanitize.ts
 ├── sanitize.test.ts    # Tests for sanitize.ts
+├── csrf.ts
+├── csrf.test.ts        # Tests for csrf.ts
 ```
 
 ### E2E Tests
@@ -277,6 +308,18 @@ E2E tests are in the `tests/e2e/` directory.
 - **Should test**: Business logic, state management
 - **Nice to have**: UI components, edge cases
 
+### Test Coverage
+
+Security-critical code requires high test coverage:
+
+| Module | Target Coverage |
+|--------|-----------------|
+| `src/lib/csrf.ts` | 90%+ |
+| `src/lib/rate-limit.ts` | 90%+ |
+| `src/lib/sanitize.ts` | 90%+ |
+| `src/lib/auth.ts` | 90%+ |
+| API routes | 70%+ |
+
 ## Pull Request Guidelines
 
 ### Before Submitting
@@ -285,6 +328,8 @@ E2E tests are in the `tests/e2e/` directory.
 - [ ] Code follows the style guidelines
 - [ ] New features have tests
 - [ ] Documentation is updated if needed
+- [ ] No console.log statements
+- [ ] No hardcoded secrets
 
 ### PR Description
 
@@ -309,7 +354,7 @@ Include:
 If you discover a security vulnerability, please:
 
 1. **DO NOT** create a public issue
-2. Email the maintainers directly
+2. Email security@covidvaccineinjury.us
 3. Include steps to reproduce
 4. Allow time for a fix before disclosure
 
@@ -317,17 +362,84 @@ If you discover a security vulnerability, please:
 
 When making changes that handle user input:
 
-- [ ] Input is sanitized before use
+- [ ] Input is validated before use
+- [ ] Input is sanitized via `sanitize*()` functions
 - [ ] Output is escaped when rendered
 - [ ] Rate limiting is in place
 - [ ] CSRF protection is verified
 - [ ] No sensitive data in logs
+- [ ] Error messages don't leak internal details
+
+### Adding New API Endpoints
+
+All new POST endpoints must implement:
+
+1. Request ID generation (`crypto.randomUUID()`)
+2. CSRF validation (`validateCsrfToken()`)
+3. Rate limiting (`checkRateLimit()`)
+4. Input sanitization (`sanitize*()` functions)
+5. reCAPTCHA verification (when configured)
+6. X-Request-ID response header
+
+## Environment Variables
+
+### Development
+
+```bash
+# Required
+DATABASE_URL=postgresql://localhost:5432/covidvaccineinjury
+PAYLOAD_SECRET=dev-secret-at-least-32-characters-long
+
+# Optional (features will be disabled if not set)
+UPSTASH_REDIS_REST_URL=
+UPSTASH_REDIS_REST_TOKEN=
+NEXT_PUBLIC_RECAPTCHA_SITE_KEY=
+RECAPTCHA_SECRET_KEY=
+STRIPE_SECRET_KEY=
+```
+
+### Development Shortcuts
+
+In development mode:
+- CSRF validation bypasses localhost requests
+- reCAPTCHA verification is skipped if not configured
+- Rate limiting uses in-memory storage (resets on server restart)
+
+## Common Tasks
+
+### Adding a New Collection
+
+1. Create collection file in `src/collections/`
+2. Add to `payload.config.ts`
+3. Run `npm run generate:types`
+4. Create API routes if needed
+
+### Adding a New API Route
+
+1. Create route file in `src/app/api/`
+2. Implement security pattern (see above)
+3. Add rate limit config to `src/lib/constants.ts`
+4. Document in `API.md`
+5. Add tests
+
+### Updating Dependencies
+
+```bash
+# Check for updates
+npm outdated
+
+# Update a specific package
+npm update package-name
+
+# Run full test suite after updates
+npm run typecheck && npm run lint && npm run test:unit
+```
 
 ## Questions?
 
 - **General questions**: Open a GitHub Discussion
 - **Bug reports**: Open a GitHub Issue
-- **Security issues**: Email maintainers directly
+- **Security issues**: Email security@covidvaccineinjury.us
 
 ## License
 
