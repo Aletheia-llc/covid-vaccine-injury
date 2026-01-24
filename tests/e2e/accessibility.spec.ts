@@ -5,6 +5,24 @@ test.describe('Accessibility', () => {
   test('homepage has no critical accessibility violations', async ({ page }) => {
     await page.goto('/')
 
+    // Scroll through the entire page to trigger all fade-in animations
+    await page.evaluate(async () => {
+      const scrollHeight = document.documentElement.scrollHeight
+      const viewportHeight = window.innerHeight
+      let currentScroll = 0
+
+      while (currentScroll < scrollHeight) {
+        window.scrollTo(0, currentScroll)
+        await new Promise(resolve => setTimeout(resolve, 100))
+        currentScroll += viewportHeight * 0.5
+      }
+
+      window.scrollTo(0, 0)
+    })
+
+    // Wait for transitions to complete
+    await page.waitForTimeout(1000)
+
     const results = await new AxeBuilder({ page })
       .withTags(['wcag2a', 'wcag2aa'])
       .analyze()
@@ -124,6 +142,26 @@ test.describe('Accessibility', () => {
 
   test('color contrast meets WCAG AA standards', async ({ page }) => {
     await page.goto('/')
+
+    // Scroll through the entire page to trigger all fade-in animations
+    // This ensures all sections have opacity: 1 before running contrast checks
+    await page.evaluate(async () => {
+      const scrollHeight = document.documentElement.scrollHeight
+      const viewportHeight = window.innerHeight
+      let currentScroll = 0
+
+      while (currentScroll < scrollHeight) {
+        window.scrollTo(0, currentScroll)
+        await new Promise(resolve => setTimeout(resolve, 100))
+        currentScroll += viewportHeight * 0.5
+      }
+
+      // Scroll back to top
+      window.scrollTo(0, 0)
+    })
+
+    // Wait for all fade-in transitions to complete (0.8s transition + buffer)
+    await page.waitForTimeout(1000)
 
     const results = await new AxeBuilder({ page })
       .withRules(['color-contrast'])
