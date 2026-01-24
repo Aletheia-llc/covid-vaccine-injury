@@ -2,6 +2,7 @@ import React from 'react'
 import Script from 'next/script'
 import './styles.css'
 import AnalyticsWrapper from './components/AnalyticsWrapper'
+import { WebVitals } from './components/WebVitals'
 
 export const metadata = {
   title: 'U.S. Covid Vaccine Injuries | Fair Compensation for Americans',
@@ -59,9 +60,17 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
         )}
       </head>
       <body>
-        {children}
+        {/* Accessibility: Skip link for keyboard navigation */}
+        <a href="#main-content" className="skip-link">
+          Skip to main content
+        </a>
+        <div id="main-content">
+          {children}
+        </div>
         {/* Analytics loaded conditionally based on cookie consent */}
         <AnalyticsWrapper />
+        {/* Web Vitals reporting */}
+        <WebVitals />
       </body>
     </html>
   )

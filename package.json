@@ -21,7 +21,8 @@
     "test:e2e": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" npx playwright test",
     "test:e2e:ui": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" npx playwright test --ui",
     "test:e2e:headed": "cross-env NODE_OPTIONS=\"--no-deprecation --no-experimental-strip-types\" npx playwright test --headed",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "lighthouse": "lhci autorun"
   },
   "dependencies": {
     "@payloadcms/db-postgres": "3.72.0",
@@ -48,6 +49,8 @@
     "stripe": "^20.2.0"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.0",
+    "@lhci/cli": "^0.15.1",
     "@playwright/test": "1.56.1",
     "@testing-library/react": "16.3.0",
     "@types/js-yaml": "^4.0.9",
@@ -56,6 +59,7 @@
     "@types/react-dom": "19.2.1",
     "@vitejs/plugin-react": "4.5.2",
     "autoprefixer": "^10.4.23",
+    "checkly": "^6.9.10",
     "eslint": "^9.16.0",
     "eslint-config-next": "15.4.7",
     "jsdom": "26.1.0",

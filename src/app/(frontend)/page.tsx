@@ -1097,8 +1097,15 @@ export default function HomePage() {
 
       {/* CICP Roulette Modal */}
       {rouletteOpen && (
-        <div className="modal-overlay" onClick={closeRoulette}>
+        <div
+          className="modal-overlay"
+          onClick={closeRoulette}
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="roulette-modal-title"
+        >
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2 id="roulette-modal-title" className="sr-only">CICP Roulette Game</h2>
             <button className="modal-close" onClick={closeRoulette} aria-label="Close modal">
               ✕
             </button>
