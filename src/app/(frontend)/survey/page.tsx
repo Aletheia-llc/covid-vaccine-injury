@@ -44,7 +44,24 @@ export default function SurveyPage() {
   })
 
   const [scrollProgress, setScrollProgress] = useState(0)
+  const [csrfToken, setCsrfToken] = useState('')
   const surveyStartedRef = useRef(false)
+
+  // Fetch CSRF token on mount
+  useEffect(() => {
+    const fetchCsrfToken = async () => {
+      try {
+        const response = await fetch('/api/csrf')
+        if (response.ok) {
+          const data = await response.json()
+          setCsrfToken(data.csrfToken)
+        }
+      } catch {
+        // CSRF fetch failed - submission will fail with appropriate error
+      }
+    }
+    fetchCsrfToken()
+  }, [])
 
   useEffect(() => {
     const handleScroll = () => {
@@ -165,7 +182,10 @@ export default function SurveyPage() {
 
       const response = await fetch('/api/survey', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'x-csrf-token': csrfToken
+        },
         body: JSON.stringify({ ...surveyData, recaptchaToken })
       })
 
@@ -501,8 +521,10 @@ export default function SurveyPage() {
                   </div>
 
                   <div className="survey-question">
-                    <label>Additional Comments (Optional)</label>
+                    <label htmlFor="survey-comments">Additional Comments (Optional)</label>
                     <textarea
+                      id="survey-comments"
+                      name="comments"
                       className="survey-textarea"
                       placeholder="Share any additional thoughts, experiences, or suggestions..."
                       value={surveyData.comments}
@@ -513,23 +535,29 @@ export default function SurveyPage() {
 
                   <div className="survey-question-row">
                     <div className="survey-question half">
-                      <label>ZIP Code (Optional)</label>
+                      <label htmlFor="survey-zip">ZIP Code (Optional)</label>
                       <input
+                        id="survey-zip"
+                        name="zip"
                         type="text"
                         className="survey-input"
                         placeholder="12345"
                         maxLength={5}
+                        autoComplete="postal-code"
                         value={surveyData.zip}
                         onChange={(e) => updateSurvey('zip', e.target.value.replace(/\D/g, ''))}
                       />
                       <span className="input-note">Helps us understand regional impact</span>
                     </div>
                     <div className="survey-question half">
-                      <label>Email (Optional)</label>
+                      <label htmlFor="survey-email">Email (Optional)</label>
                       <input
+                        id="survey-email"
+                        name="email"
                         type="email"
                         className="survey-input"
                         placeholder="you@example.com"
+                        autoComplete="email"
                         value={surveyData.email}
                         onChange={(e) => updateSurvey('email', e.target.value)}
                       />
