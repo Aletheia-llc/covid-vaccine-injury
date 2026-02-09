@@ -60,7 +60,7 @@
     "@vitejs/plugin-react": "4.5.2",
     "autoprefixer": "^10.4.23",
     "checkly": "^6.9.10",
-    "eslint": "^9.16.0",
+    "eslint": "^10.0.0",
     "eslint-config-next": "15.4.7",
     "jsdom": "26.1.0",
     "playwright": "1.56.1",
