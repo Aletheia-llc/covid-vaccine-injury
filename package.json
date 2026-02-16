@@ -57,7 +57,7 @@
     "@types/node": "^22.5.4",
     "@types/react": "19.2.1",
     "@types/react-dom": "19.2.1",
-    "@vitejs/plugin-react": "4.5.2",
+    "@vitejs/plugin-react": "5.1.4",
     "autoprefixer": "^10.4.23",
     "checkly": "^6.9.10",
     "eslint": "^9.16.0",
