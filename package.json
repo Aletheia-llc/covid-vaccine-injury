@@ -59,7 +59,7 @@
     "@types/react-dom": "19.2.1",
     "@vitejs/plugin-react": "4.5.2",
     "autoprefixer": "^10.4.23",
-    "checkly": "^6.9.10",
+    "checkly": "^7.0.1",
     "eslint": "^9.16.0",
     "eslint-config-next": "15.4.7",
     "jsdom": "26.1.0",
