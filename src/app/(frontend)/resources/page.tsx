@@ -67,6 +67,9 @@ const hardcodedResources = [
   { category: 'Legal', name: '26 U.S.C. 9510: Vaccine Injury Compensation Trust Fund', program: 'Both', description: 'Statutory framework for the Trust Fund including administrative expense caps and excise tax provisions', frequency: 'U.S. Code', url: 'https://www.law.cornell.edu/uscode/text/26/9510', icon: 'scale' },
   { category: 'Legal', name: 'OPM Executive Schedule Pay Tables (2026)', program: 'Both', description: 'Current salary rates: Level IV ($197,200) and Level V ($184,900) — sets special master pay', frequency: '2026', url: 'https://www.opm.gov/policy-data-oversight/pay-leave/salaries-wages/salary-tables/26Tables/exec/html/EX.aspx', icon: 'scale' },
   { category: 'Legal', name: 'Zhao et al. (2022) - CICP Reform Analysis', program: 'Both', description: 'Journal of Law & Biosciences article on CICP reform options and Trust Fund interest income', frequency: '2022', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC8977129/', icon: 'scale' },
+
+  // Independent Analysis (third-party, not affiliated with this site)
+  { category: 'Independent Analysis', name: 'HowBadIsMyBatch — Vaccine Lot Data Explorer', program: 'Both', description: 'Third-party tool correlating COVID-19 vaccine batch codes with VAERS adverse event reports. Maintained independently by Frank Knoll. Not affiliated with this site; methodology and conclusions are the author\'s own.', frequency: 'Updated regularly', url: 'https://knollfrank.github.io/HowBadIsMyBatch/batchCodes.html', icon: 'search' },
 ]
 
 export default async function ResourcesPage() {
