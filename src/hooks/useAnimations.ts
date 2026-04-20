@@ -217,24 +217,6 @@ export function useScrollAnimations() {
     // Waterfall funnel bars animation - handled by CSS in page.tsx via funnelAnimated state
     // The CSS clip-path animation triggers when .animate class is added to .waterfall-funnel
 
-    // Fund tank animation - CSS class based for smooth transition
-    const fundTank = document.querySelector('.fund-tank');
-    if (fundTank) {
-      const observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (entry.isIntersecting) {
-              // Simply add animated class - CSS handles the transition
-              entry.target.classList.add('animated');
-              observer.unobserve(entry.target);
-            }
-          });
-        },
-        { threshold: 0.3 }
-      );
-      observer.observe(fundTank);
-    }
-
     // Comparison cards animation
     const comparisonCards = document.querySelectorAll('.comparison-card');
     if (comparisonCards.length) {

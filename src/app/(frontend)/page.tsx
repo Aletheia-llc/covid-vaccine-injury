@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, useMemo } from 'react'
 import Link from 'next/link'
 import { track } from '@vercel/analytics'
 import { useSiteAnimations } from '@/hooks/useAnimations'
@@ -36,8 +36,8 @@ export default function HomePage() {
 
   const [scrollProgress, setScrollProgress] = useState(0)
   const [heroStats, setHeroStats] = useState({ claims: 0, compensated: 0, rate: 0, vicp: 0 })
-  const [calcValues, setCalcValues] = useState({ approval: 40, award: 300000, claims: getNumeric('cicp_claims_filed') || 14046 })
-  const [appropriation, setAppropriation] = useState(0)
+  const [calcValues, setCalcValues] = useState({ approval: 45, award: 325000, claims: getNumeric('cicp_claims_filed') || 14075 })
+  const [fundParams, setFundParams] = useState({ approvalRate: 45, avgAward: 325000, specialMasters: 10 })
   const [personalCalc, setPersonalCalc] = useState({
     medical: 50000,
     insurance: 80,
@@ -60,10 +60,8 @@ export default function HomePage() {
   const [subscribeMessage, setSubscribeMessage] = useState({ type: '', text: '' })
     const [calcTracked, setCalcTracked] = useState({ main: false, personal: false })
   const [rouletteOpen, setRouletteOpen] = useState(false)
-  const [rouletteTriggered, setRouletteTriggered] = useState(false)
   const [funnelAnimated, setFunnelAnimated] = useState(false)
   const [fundAnimated, setFundAnimated] = useState(false)
-  const [animatedAvailable, setAnimatedAvailable] = useState<number | null>(null)
   const heroRef = useRef<HTMLElement>(null)
   const funnelRef = useRef<HTMLDivElement>(null)
   const fundTankRef = useRef<HTMLDivElement>(null)
@@ -121,18 +119,7 @@ export default function HomePage() {
     return () => observer.disconnect()
   }, [fundAnimated])
 
-  // Trigger roulette popup at 30% scroll (only once per session)
-  useEffect(() => {
-    if (scrollProgress >= 30 && !rouletteTriggered && !rouletteOpen) {
-      // Check if user has already dismissed it this session
-      const dismissed = sessionStorage.getItem('roulette_dismissed')
-      if (!dismissed) {
-        setRouletteOpen(true)
-        setRouletteTriggered(true)
-        track('roulette_auto_opened', { scroll_percent: Math.round(scrollProgress) })
-      }
-    }
-  }, [scrollProgress, rouletteTriggered, rouletteOpen])
+  // Roulette auto-popup disabled — users can still open it from nav or /roulette page
 
   // Close roulette handler
   const closeRoulette = () => {
@@ -145,10 +132,10 @@ export default function HomePage() {
     // Only run animation once
     if (heroAnimationComplete.current) return
 
-    const claimsTarget = 14046
-    const compensatedTarget = 42
+    const claimsTarget = 14075
+    const compensatedTarget = 44
     const rateTarget = 0.3
-    const vicpTarget = 48
+    const vicpTarget = 49
 
     const duration = 2000
     const startTime = performance.now()
@@ -180,35 +167,82 @@ export default function HomePage() {
   const approvedClaims = Math.round(calcValues.claims * (calcValues.approval / 100))
   const totalCost = approvedClaims * calcValues.award
   const percentOfFund = (totalCost / 4500000000) * 100
-  const totalFund = 4500000000 + appropriation
-  const burdenPercent = (totalCost / totalFund) * 100
-  const remaining = totalFund - totalCost
 
-  // Animate the available funds counting down when fund tank comes into view
-  useEffect(() => {
-    if (!fundAnimated) return
+  // 10-Year Trust Fund Projection (dynamic based on sliders)
+  const fundProjection = useMemo(() => {
+    const results: Array<{ year: number; balance: number; covidBacklog: number; vicpBacklog: number; covidProcessed: number; covidCostM: number; surplusM: number; totalCapacity: number }> = []
+    let balance = 4.5 // billions
+    let covidBacklog = 14075
+    let vicpBacklog = 3600
+    const masterRate = 162.5 // adjudications per master per year
+    const totalCapacity = Math.round(fundParams.specialMasters * masterRate)
+    const ongoingVicp = 1200 // existing VICP filings per year
+    const newVaccineClaims = 218 // RSV ~150 + Shingles ~43 + Dengue ~5 + future ~20
+    const totalNewFilings = ongoingVicp + newVaccineClaims // ~1,418/yr
+    const excessCapacity = Math.max(totalCapacity - totalNewFilings, 0)
+    const doses = 0.375 // billions of doses
+    const excise = 2.20
+    const cpi = 1.03
+    const masterOverheadB = fundParams.specialMasters * 0.00125 // ~$1.25M per master (CRS IF12625: $10M OSM budget / 8 masters)
 
-    const startValue = totalFund
-    const endValue = Math.max(remaining, 0)
-    const duration = 1800 // Match the CSS transition duration
-    const startTime = performance.now()
-
-    const animate = (currentTime: number) => {
-      const elapsed = currentTime - startTime
-      const progress = Math.min(elapsed / duration, 1)
-      const easeOutQuart = 1 - Math.pow(1 - progress, 4)
-
-      const currentValue = startValue - (startValue - endValue) * easeOutQuart
-      setAnimatedAvailable(Math.max(currentValue, 0))
-
-      if (progress < 1) {
-        requestAnimationFrame(animate)
+    for (let yr = 0; yr <= 10; yr++) {
+      if (yr === 0) {
+        results.push({ year: yr, balance, covidBacklog, vicpBacklog, covidProcessed: 0, covidCostM: 0, surplusM: 0, totalCapacity })
+        continue
       }
-    }
+      const cpiFactor = Math.pow(cpi, yr - 1)
 
-    requestAnimationFrame(animate)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [fundAnimated])
+      // Inflows
+      const exciseRevenue = doses * excise * cpiFactor
+      const interest = balance * 0.019
+      const inflows = exciseRevenue + interest
+
+      // Allocate excess capacity proportionally between backlogs
+      const totalBacklog = vicpBacklog + covidBacklog
+      let vicpProcessed = 0
+      let covidProcessed = 0
+      if (totalBacklog > 0 && excessCapacity > 0) {
+        const vicpShare = vicpBacklog / totalBacklog
+        vicpProcessed = Math.min(vicpBacklog, Math.floor(excessCapacity * vicpShare))
+        covidProcessed = Math.min(covidBacklog, Math.floor(excessCapacity * (1 - vicpShare)))
+      }
+      vicpBacklog = Math.max(vicpBacklog - vicpProcessed, 0)
+      covidBacklog = Math.max(covidBacklog - covidProcessed, 0)
+
+      // Outflows
+      const existingVicp = 0.275 * cpiFactor
+      const covidCostB = (covidProcessed * (fundParams.approvalRate / 100) * fundParams.avgAward) / 1e9
+      const newVaccine = 0.055 * cpiFactor
+      const overhead = masterOverheadB * cpiFactor
+      const outflows = existingVicp + covidCostB + newVaccine + overhead
+
+      const surplus = inflows - outflows
+      balance += surplus
+
+      results.push({
+        year: yr,
+        balance,
+        covidBacklog,
+        vicpBacklog,
+        covidProcessed,
+        covidCostM: covidCostB * 1000,
+        surplusM: surplus * 1000,
+        totalCapacity,
+      })
+    }
+    return results
+  }, [fundParams])
+
+  const yr10 = fundProjection[10]
+  const yr1 = fundProjection[1]
+  const totalCapacityDerived = Math.round(fundParams.specialMasters * 162.5)
+  const netCovidCapacity = Math.max(totalCapacityDerived - 1200 - 218, 0) // total - VICP filings - new vaccine filings
+  const yearsToComplete = netCovidCapacity > 0 ? Math.ceil(14075 / netCovidCapacity) : null
+  const masterOverheadM = fundParams.specialMasters * 1.25
+  // COVID annual cost at base assumptions using net capacity
+  const baseCovidCostM = Math.round(netCovidCapacity * (fundParams.approvalRate / 100) * fundParams.avgAward / 1000000)
+  const baseTotalOutflowsM = 275 + baseCovidCostM + 55 + Math.round(masterOverheadM)
+  const baseSurplusM = 910 - baseTotalOutflowsM
 
   const formatCurrency = (value: number) => {
     if (value >= 1000000000) return `$${(value / 1000000000).toFixed(2)}B`
@@ -338,12 +372,12 @@ export default function HomePage() {
             <Scale size={18} /> The Compensation Gap
           </div>
           <h1 className="hero-title">
-            <span className="hero-line line-1">14,046 Claims Filed.</span>
-            <span className="hero-line line-2">42 Americans Compensated.</span>
+            <span className="hero-line line-1">14,075 Claims Filed.</span>
+            <span className="hero-line line-2">44 Americans Compensated.</span>
             <span className="hero-line line-3">A 0.3% Approval Rate.</span>
           </h1>
           <p className="hero-subtitle">
-            Americans injured by COVID-19 vaccines face a different compensation system than those injured by flu shots, MMR, or other routine vaccines. <strong>The result: a 0.3% approval rate vs. ~48%.</strong> This site explains why, and what can be done about it.
+            Americans injured by COVID-19 vaccines face a different compensation system than those injured by flu shots, MMR, or other routine vaccines. <strong>The result: a 0.3% approval rate vs. ~49%.</strong> This site explains why, and what can be done about it.
           </p>
 
           <div className="hero-stats">
@@ -367,10 +401,7 @@ export default function HomePage() {
 
           <div className="hero-ctas">
             <a href="#funnel" className="hero-btn primary" onClick={() => track('cta_clicked', { location: 'hero', type: 'see_data' })}>
-              <BarChart3 size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />See the Data
-            </a>
-            <a href="#action" className="hero-btn secondary" onClick={() => track('cta_clicked', { location: 'hero', type: 'take_action' })}>
-              <Scale size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />Take Action
+              <BarChart3 size={18} style={{ marginRight: '8px', verticalAlign: 'middle' }} />See the Evidence
             </a>
           </div>
         </div>
@@ -383,7 +414,7 @@ export default function HomePage() {
             <span className="section-label">The CICP Reality</span>
             <h2 className="section-title">What Happens to a Claim?</h2>
             <p className="section-desc">
-              Over {(getNumeric('cicp_claims_filed') || 14046).toLocaleString()} Americans have filed COVID-19 vaccine injury claims with Countermeasures Injury Compensation Program (CICP). Here&apos;s what&apos;s happened to them so far.
+              Over {(getNumeric('cicp_claims_filed') || 14075).toLocaleString()} Americans have filed COVID-19 vaccine injury claims with Countermeasures Injury Compensation Program (CICP). Here&apos;s what&apos;s happened to them so far.
             </p>
 
             <div ref={funnelRef} className={`waterfall-funnel${funnelAnimated ? ' animate' : ''}`}>
@@ -393,7 +424,7 @@ export default function HomePage() {
                   <p>COVID-19 vaccine injury claims submitted</p>
                 </div>
                 <div className="waterfall-bar-container">
-                  <div className="waterfall-bar vaers">{statistics.cicp_claims_filed?.value || '14,046'} Claims</div>
+                  <div className="waterfall-bar vaers">{statistics.cicp_claims_filed?.value || '14,075'} Claims</div>
                 </div>
                 <div className="waterfall-stat">
                   <div className="number">100%</div>
@@ -407,7 +438,7 @@ export default function HomePage() {
                   <p>Claims reviewed and decided</p>
                 </div>
                 <div className="waterfall-bar-container">
-                  <div className="waterfall-bar claims">{statistics.cicp_decisions_rendered?.value || '6,273'}</div>
+                  <div className="waterfall-bar claims">{statistics.cicp_decisions_rendered?.value || '6,421'}</div>
                 </div>
                 <div className="waterfall-stat">
                   <div className="number" style={{ color: 'var(--warning)' }}>45%</div>
@@ -421,7 +452,7 @@ export default function HomePage() {
                   <p>Actually received payment</p>
                 </div>
                 <div className="waterfall-bar-container">
-                  <div className="waterfall-bar compensated" data-label={statistics.cicp_compensated?.value || '42'}></div>
+                  <div className="waterfall-bar compensated" data-label={statistics.cicp_compensated?.value || '44'}></div>
                 </div>
                 <div className="waterfall-stat">
                   <div className="number" style={{ color: 'var(--danger)' }}>{statistics.cicp_approval_rate?.value || '0.3%'}</div>
@@ -432,11 +463,11 @@ export default function HomePage() {
 
             <div className="funnel-summary">
               <div className="funnel-summary-stat">
-                <div className="stat-number">{statistics.cicp_pending_percent?.value || '55%'}</div>
+                <div className="stat-number">{statistics.cicp_pending_percent?.value || '54%'}</div>
                 <div className="stat-label">of claims still pending review<sup><a href="#citations" className="citation-link">1</a></sup></div>
               </div>
               <div className="funnel-summary-stat">
-                <div className="stat-number danger">{statistics.cicp_denial_rate?.value || '99.3%'}</div>
+                <div className="stat-number danger">{statistics.cicp_denial_rate?.value || '98.6%'}</div>
                 <div className="stat-label">of decided claims were denied<sup><a href="#citations" className="citation-link">1</a></sup></div>
               </div>
               <div className="funnel-summary-stat">
@@ -444,6 +475,43 @@ export default function HomePage() {
                 <div className="stat-label">average time to decision<sup><a href="#citations" className="citation-link">3</a></sup></div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Denial Breakdown Section */}
+      <section className="denial-breakdown-section" id="denials">
+        <div className="section-inner">
+          <span className="section-label">Why So Low?</span>
+          <h2 className="section-title">75% of Denials Were Procedural</h2>
+          <p className="section-desc">
+            CICP denied over 6,300 claims. But most weren&apos;t denied because the injury wasn&apos;t real — they were denied for paperwork reasons that VICP&apos;s structure directly solves.
+          </p>
+
+          <div className="denial-bars">
+            {[
+              { reason: 'Missed 1-year filing deadline', pct: 39.4, count: '2,533', color: 'var(--warning)', fix: 'VICP allows 5 years + 8-year lookback' },
+              { reason: 'Records not submitted', pct: 35.7, count: '2,291', color: 'var(--slate-gray)', fix: 'VICP covers attorney fees for documentation' },
+              { reason: 'Standard of proof not met', pct: 19.5, count: '1,251', color: 'var(--danger)', fix: 'VICP uses lower standard + table injuries' },
+              { reason: 'Not a covered product', pct: 4.0, count: '259', color: 'var(--primary-light)', fix: 'Wrong vaccine category' },
+              { reason: 'Found eligible', pct: 1.4, count: '87', color: 'var(--success)', fix: '44 actually received payment' },
+            ].map((d, i) => (
+              <div key={i} className="denial-bar-row">
+                <div className="denial-bar-info">
+                  <span className="denial-bar-reason">{d.reason}</span>
+                  <span className="denial-bar-count">{d.count} ({d.pct}%)</span>
+                </div>
+                <div className="denial-bar-track">
+                  <div className="denial-bar-fill" style={{ width: `${(d.pct / 40) * 100}%`, backgroundColor: d.color }} />
+                </div>
+                <div className="denial-bar-fix">{d.fix}</div>
+              </div>
+            ))}
+          </div>
+
+          <div className="denial-insight">
+            <AlertTriangle size={20} style={{ flexShrink: 0, marginTop: '2px' }} />
+            <p>Only <strong>19.5%</strong> of CICP denials were on the actual medical merits. The rest were procedural barriers — missed deadlines, missing documentation — that VICP eliminates through longer filing windows, attorney representation, and fee coverage.<sup><a href="#citations" className="citation-link">1</a></sup> <a href="/model#denials" onClick={() => track('cta_clicked', { location: 'denial_breakdown', type: 'view_model' })}>See full analysis →</a></p>
           </div>
         </div>
       </section>
@@ -460,8 +528,8 @@ export default function HomePage() {
           <div className="comparison-grid">
             <div className="comparison-card cicp">
               <span className="comparison-card-badge">CICP - COVID-19 Vaccines</span>
-              <h3>{statistics.cicp_compensated?.value || '42'} Paid</h3>
-              <p className="comparison-card-subtitle">of {statistics.cicp_claims_filed?.value || '14,046'} claims filed since 2020</p>
+              <h3>{statistics.cicp_compensated?.value || '44'} Paid</h3>
+              <p className="comparison-card-subtitle">of {statistics.cicp_claims_filed?.value || '14,075'} claims filed since 2020</p>
 
               <div className="comparison-stats">
                 <div className="comparison-stat">
@@ -485,16 +553,16 @@ export default function HomePage() {
 
             <div className="comparison-card vicp">
               <span className="comparison-card-badge">VICP - Routine Vaccines</span>
-              <h3>{statistics.vicp_total_compensated?.value || '12,300+'} Paid</h3>
-              <p className="comparison-card-subtitle">of {statistics.vicp_total_claims?.value || '~29,000'} claims since 1988</p>
+              <h3>{statistics.vicp_total_compensated?.value || '12,889'} Paid</h3>
+              <p className="comparison-card-subtitle">of {statistics.vicp_total_claims?.value || '~29,670'} claims since 1988</p>
 
               <div className="comparison-stats">
                 <div className="comparison-stat">
-                  <div className="comparison-stat-number">{statistics.vicp_approval_rate?.value || '~48%'}</div>
+                  <div className="comparison-stat-number">{statistics.vicp_approval_rate?.value || '~49%'}</div>
                   <div className="comparison-stat-label">Approval Rate<sup><a href="#citations" className="citation-link">2</a></sup></div>
                 </div>
                 <div className="comparison-stat">
-                  <div className="comparison-stat-number">{statistics.vicp_total_paid?.value || '$5.4B'}</div>
+                  <div className="comparison-stat-number">{statistics.vicp_total_paid?.value || '$4.97B'}</div>
                   <div className="comparison-stat-label">Total Paid<sup><a href="#citations" className="citation-link">2</a></sup></div>
                 </div>
               </div>
@@ -506,6 +574,19 @@ export default function HomePage() {
                 <div className="comparison-feature"><span className="icon">✓</span> 3-year filing deadline</div>
                 <div className="comparison-feature"><span className="icon">✓</span> Independent judicial review</div>
               </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Attorney Callout */}
+      <section className="attorney-callout-section">
+        <div className="section-inner">
+          <div className="attorney-callout">
+            <div className="attorney-callout-icon">⚖️</div>
+            <div className="attorney-callout-content">
+              <h3>Under VICP, You Get a Lawyer — and the Program Pays for It</h3>
+              <p>CICP claimants must navigate the system alone. VICP covers reasonable attorney fees separately from your award — meaning legal representation doesn&apos;t cost you anything, even if your case is denied. This is the single biggest structural advantage for injured individuals.<sup><a href="#citations" className="citation-link">2</a></sup></p>
             </div>
           </div>
         </div>
@@ -532,8 +613,7 @@ export default function HomePage() {
                 <span className="label">ONE Payment (91%)</span>
               </div>
               <div className="outlier-segment others">
-                <span className="amount">{statistics.cicp_others_total?.value || '$575K'}</span>
-                <span className="label">{(getNumeric('cicp_compensated') || 42) - 1} Others</span>
+                <span className="amount">9%</span>
               </div>
             </div>
 
@@ -550,7 +630,7 @@ export default function HomePage() {
                 <div className="legend-dot navy"></div>
                 <div className="legend-info">
                   <h5>Everyone Else Combined</h5>
-                  <p>{(getNumeric('cicp_compensated') || 42) - 1} other compensated individuals split the remaining 9%</p>
+                  <p>{(getNumeric('cicp_compensated') || 44) - 1} other compensated individuals split the remaining 9%</p>
                   <div className="highlight">{statistics.cicp_others_total?.value || '$575,442'}</div>
                 </div>
               </div>
@@ -568,8 +648,8 @@ export default function HomePage() {
               </div>
               <div className="reality-stat-card vicp">
                 <div className="label">Average VICP Award</div>
-                <div className="number">{statistics.vicp_average_award?.value || '$450,000'}</div>
-                <div className="note">2006-2020 average (HRSA)<sup><a href="#citations" className="citation-link">2</a></sup></div>
+                <div className="number">{statistics.vicp_average_award?.value || '$386,000'}</div>
+                <div className="note">Lifetime average 1988–2026 (HRSA)<sup><a href="#citations" className="citation-link">2</a></sup></div>
               </div>
             </div>
           </div>
@@ -588,10 +668,10 @@ export default function HomePage() {
               <div className="median-bar-track">
                 <div className="median-bar-fill vicp"></div>
               </div>
-              <div className="median-bar-value">{statistics.vicp_average_award?.value || '$450,000'}</div>
+              <div className="median-bar-value">{statistics.vicp_average_award?.value || '$386,000'}</div>
             </div>
             <div className="median-multiplier">
-              Average VICP award is <span>109× higher</span> than typical CICP payment<sup><a href="#citations" className="citation-link">2,4</a></sup>
+              Average VICP award is <span>93× higher</span> than typical CICP payment<sup><a href="#citations" className="citation-link">2,4</a></sup>
             </div>
           </div>
         </div>
@@ -742,7 +822,7 @@ export default function HomePage() {
                     value={calcValues.approval}
                     onChange={(e) => handleMainCalcChange('approval', parseInt(e.target.value))}
                   />
-                  <div className="calc-note">VICP historical average: ~48%<sup><a href="#citations" className="citation-link">2</a></sup></div>
+                  <div className="calc-note">VICP historical average: ~49%<sup><a href="#citations" className="citation-link">2</a></sup></div>
                 </div>
 
                 <div className="calc-field">
@@ -754,12 +834,12 @@ export default function HomePage() {
                     type="range"
                     className="calc-slider"
                     min="100000"
-                    max="500000"
+                    max="650000"
                     step="25000"
                     value={calcValues.award}
                     onChange={(e) => handleMainCalcChange('award', parseInt(e.target.value))}
                   />
-                  <div className="calc-note">VICP historical average: ~$450,000<sup><a href="#citations" className="citation-link">2</a></sup></div>
+                  <div className="calc-note">VICP lifetime average: ~$386,000<sup><a href="#citations" className="citation-link">2</a></sup></div>
                 </div>
 
                 <div className="calc-field">
@@ -802,80 +882,258 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Trust Fund Section */}
+      {/* Trust Fund Section — Interactive 10-Year Projection */}
       <section className="trustfund-section" id="trustfund">
         <div className="section-inner">
           <div className="trustfund-container">
             <div className="trustfund-header">
               <span className="section-label">Fiscal Impact</span>
               <h2 className="section-title">Can the Trust Fund Handle It?</h2>
-              <p className="section-desc" style={{ margin: '0 auto' }}>
-                The primary concern about migrating COVID vaccine injuries from CICP to VICP is whether the trust fund can absorb the additional claims without breaking the program.
+              <p className="section-desc" style={{ margin: '0 auto', textAlign: 'center' }}>
+                Not only can it handle it — it <strong>grows</strong>. Adjust the assumptions below to see for yourself.
               </p>
             </div>
 
-            <div className="fund-visual">
-              <div className="fund-visual-header">
-                <h4>VICP Vaccine Injury Trust Fund</h4>
-                <div className="balance">{formatCurrency(totalFund)}</div>
+            {/* Row 1: Backlog Overview */}
+            <div className="fund-info-row">
+              <div className="fund-info-card">
+                <div className="fund-info-number">14,075</div>
+                <div className="fund-info-label">COVID claims eligible to refile<sup><a href="#citations" className="citation-link" style={{ color: 'var(--accent)' }}>1</a></sup></div>
               </div>
+              <div className="fund-info-card">
+                <div className="fund-info-number">3,600</div>
+                <div className="fund-info-label">Existing VICP pending cases<sup><a href="#citations" className="citation-link" style={{ color: 'var(--accent)' }}>2</a></sup></div>
+              </div>
+              <div className="fund-info-card">
+                <div className="fund-info-number">17,675</div>
+                <div className="fund-info-label">Total combined backlog</div>
+              </div>
+              <div className="fund-info-card">
+                <div className="fund-info-number">
+                  {yearsToComplete ? <span>~{yearsToComplete}<span className="fund-info-unit"> yrs</span></span> : <span style={{ color: 'var(--danger)', fontSize: '24px' }}>Need more masters</span>}
+                </div>
+                <div className="fund-info-label">To clear COVID backlog</div>
+              </div>
+            </div>
 
-              <div className={`fund-tank ${fundAnimated ? 'animated' : ''}`} ref={fundTankRef}>
-                <div className="fund-burden" style={{ height: fundAnimated ? `${Math.min(burdenPercent, 100)}%` : '0%' }}>
-                  <div className="fund-text">Est. COVID Claims: <span>{formatCurrency(totalCost)}</span></div>
+            {/* Row 2: Annual Throughput */}
+            <div className="fund-info-row secondary">
+              <div className="fund-info-card light">
+                <div className="fund-info-number">{totalCapacityDerived.toLocaleString()}<span className="fund-info-unit">/yr</span></div>
+                <div className="fund-info-label">Total capacity ({fundParams.specialMasters} masters × ~163 cases)<sup><a href="#citations" className="citation-link">2</a></sup></div>
+              </div>
+              <div className="fund-info-card light">
+                <div className="fund-info-number">1,200<span className="fund-info-unit">/yr</span></div>
+                <div className="fund-info-label">Ongoing VICP filings (FY24: 1,185 / FY25: 1,301)<sup><a href="#citations" className="citation-link">2</a></sup></div>
+              </div>
+              <div className="fund-info-card light">
+                <div className="fund-info-number">218<span className="fund-info-unit">/yr</span></div>
+                <div className="fund-info-label">New vaccine claims (RSV 150 + Shingles 43 + other)<sup><a href="#citations" className="citation-link">5,6</a></sup></div>
+              </div>
+              <div className="fund-info-card light">
+                <div className="fund-info-number" style={{ color: netCovidCapacity > 0 ? 'var(--success)' : 'var(--danger)' }}>
+                  {netCovidCapacity > 0 ? netCovidCapacity.toLocaleString() : '0'}<span className="fund-info-unit">/yr</span>
                 </div>
-                <div className="fund-available">
-                  <div className="fund-text">Available Funds: <span>{formatCurrency(animatedAvailable !== null ? animatedAvailable : totalFund)}</span></div>
+                <div className="fund-info-label">{netCovidCapacity > 0 ? 'Net capacity for backlog clearance' : 'No excess capacity — increase masters ↑'}</div>
+              </div>
+            </div>
+
+            {/* Adjustable Parameters */}
+            <div className="fund-sliders">
+              <h4>Adjust Assumptions</h4>
+              <div className="fund-slider-grid three">
+                <div className="fund-slider-field">
+                  <label>
+                    Special Masters
+                    <span>{fundParams.specialMasters}</span>
+                  </label>
+                  <input
+                    type="range"
+                    className="calc-slider"
+                    min="8"
+                    max="30"
+                    value={fundParams.specialMasters}
+                    onChange={(e) => setFundParams(p => ({ ...p, specialMasters: parseInt(e.target.value) }))}
+                  />
+                  <div className="calc-note">Current: 8 — Bill requires 10+ — Cost: ~${masterOverheadM.toFixed(1)}M/yr (CRS)</div>
                 </div>
-                <div className="fund-scale">
-                  <div className="fund-scale-mark">{formatCurrency(totalFund)}</div>
-                  <div className="fund-scale-mark">{formatCurrency(totalFund * 0.75)}</div>
-                  <div className="fund-scale-mark">{formatCurrency(totalFund * 0.5)}</div>
-                  <div className="fund-scale-mark">{formatCurrency(totalFund * 0.25)}</div>
-                  <div className="fund-scale-mark">$0</div>
+                <div className="fund-slider-field">
+                  <label>
+                    COVID Approval Rate
+                    <span>{fundParams.approvalRate}%</span>
+                  </label>
+                  <input
+                    type="range"
+                    className="calc-slider"
+                    min="20"
+                    max="65"
+                    value={fundParams.approvalRate}
+                    onChange={(e) => setFundParams(p => ({ ...p, approvalRate: parseInt(e.target.value) }))}
+                  />
+                  <div className="calc-note">Validated estimate: 45%</div>
+                </div>
+                <div className="fund-slider-field">
+                  <label>
+                    Average COVID Award
+                    <span>${fundParams.avgAward.toLocaleString()}</span>
+                  </label>
+                  <input
+                    type="range"
+                    className="calc-slider"
+                    min="100000"
+                    max="650000"
+                    step="25000"
+                    value={fundParams.avgAward}
+                    onChange={(e) => setFundParams(p => ({ ...p, avgAward: parseInt(e.target.value) }))}
+                  />
+                  <div className="calc-note">Validated estimate: $325K</div>
                 </div>
               </div>
             </div>
 
-            <div className="appropriation-section">
-              <h4><Building2 size={20} style={{ marginRight: '8px', verticalAlign: 'middle' }} />What If Congress Appropriates Additional Funds?</h4>
-              <p>Congress could inject liquidity into the VICP Trust Fund to ensure stability. Adjust the slider to see the impact.</p>
-
-              <div className="appropriation-slider-container">
-                <label>
-                  Congressional Appropriation
-                  <span>{formatCurrency(appropriation)}</span>
-                </label>
-                <input
-                  type="range"
-                  className="calc-slider"
-                  min="0"
-                  max="5000000000"
-                  step="100000000"
-                  value={appropriation}
-                  onChange={(e) => setAppropriation(parseInt(e.target.value))}
-                />
+            {/* Current vs Proposed Comparison */}
+            <div className="fund-current-vs-proposed">
+              <div className="fund-comparison-card current">
+                <div className="fund-comparison-label">Current Program ($0.75 excise)</div>
+                <div className="fund-comparison-amounts">
+                  <span>In: $308M</span>
+                  <span>Out: $373M</span>
+                  <span className="deficit">-$7M/yr deficit</span>
+                </div>
+                <div className="fund-comparison-note">Program is already slightly underwater with COVID + new vaccines<sup><a href="#citations" className="citation-link">2,9</a></sup></div>
               </div>
+              <div className="fund-comparison-arrow">→</div>
+              <div className="fund-comparison-card proposed">
+                <div className="fund-comparison-label">Under Bill ($2.20 excise)</div>
+                <div className="fund-comparison-amounts">
+                  <span>In: $910M</span>
+                  <span>Out: ${baseTotalOutflowsM}M</span>
+                  <span className="surplus">+${baseSurplusM}M/yr surplus</span>
+                </div>
+                <div className="fund-comparison-note">Trust Fund grows from $4.5B to $12.1B over 10 years</div>
+              </div>
+            </div>
 
-              <div className="appropriation-result">
-                <div className="appropriation-result-card">
-                  <div className="label">New Total Fund Balance</div>
-                  <div className="number">{formatCurrency(totalFund)}</div>
+            {/* Dynamic Cash Flow Summary */}
+            <div className="fund-flow-summary">
+              <div className="fund-flow-card inflow">
+                <div className="fund-flow-label">Annual Revenue</div>
+                <div className="fund-flow-amount">$910M</div>
+                <div className="fund-flow-detail">375M doses × $2.20 + interest</div>
+              </div>
+              <div className="fund-flow-arrow">→</div>
+              <div className="fund-flow-card outflow">
+                <div className="fund-flow-label">Annual Costs</div>
+                <div className="fund-flow-amount">${baseTotalOutflowsM}M</div>
+                <div className="fund-flow-detail">VICP $275M + COVID ${baseCovidCostM}M + New $55M</div>
+              </div>
+              <div className="fund-flow-arrow">=</div>
+              <div className="fund-flow-card surplus">
+                <div className="fund-flow-label">Annual Surplus</div>
+                <div className="fund-flow-amount" style={{ color: baseSurplusM > 0 ? 'var(--success)' : 'var(--danger)' }}>
+                  {baseSurplusM > 0 ? '+' : ''}${baseSurplusM}M
                 </div>
-                <div className="appropriation-result-card">
-                  <div className="label">Remaining After COVID Claims</div>
-                  <div className="number">{formatCurrency(Math.max(remaining, 0))}</div>
+                <div className="fund-flow-detail">{baseSurplusM > 0 ? 'Fund grows every year' : 'Fund would shrink'}</div>
+              </div>
+            </div>
+
+            {/* Dynamic 10-Year Bar Chart */}
+            <div className="fund-projection" ref={fundTankRef}>
+              <div className="fund-projection-header">
+                <h4>10-Year Trust Fund Projection</h4>
+                <div className="fund-projection-result">
+                  Year 10: <strong>${yr10 ? yr10.balance.toFixed(1) : '11.9'}B</strong>
                 </div>
+              </div>
+              <div className={`fund-projection-chart ${fundAnimated ? 'animated' : ''}`}>
+                {fundProjection.map((d, i) => (
+                  <div key={i} className="fund-bar-col">
+                    <div className="fund-bar-value">${d.balance.toFixed(1)}B</div>
+                    <div className="fund-bar-track">
+                      <div
+                        className="fund-bar-fill"
+                        style={{
+                          height: fundAnimated ? `${(d.balance / 15) * 100}%` : '0%',
+                          transitionDelay: `${i * 0.08}s`,
+                          background: d.balance < 4.5 ? 'var(--danger)' : undefined
+                        }}
+                      />
+                    </div>
+                    <div className="fund-bar-year">{d.year === 0 ? 'Now' : `Yr ${d.year}`}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="fund-projection-footer">
+                <span>COVID backlog at Year 10: <strong>{yr10 ? yr10.covidBacklog.toLocaleString() : '12,005'}</strong></span>
+                <span>VICP backlog at Year 10: <strong>{yr10 ? yr10.vicpBacklog.toLocaleString() : '0'}</strong></span>
+                <span>Net COVID capacity: <strong>~{netCovidCapacity}/yr</strong></span>
               </div>
             </div>
 
             <div className="fund-insight">
-              <h4>The Fund Can Handle This</h4>
-              <p>The math works. Even with conservative projections, the trust fund can absorb COVID claims, especially with modest congressional support. Money isn&apos;t the barrier to fair compensation.</p>
+              <h4>The Fund Doesn&apos;t Just Survive — It Thrives</h4>
+              <p>Revenue from new vaccine excise taxes (~$73M) more than covers new vaccine claims ($55M). Processing constraints spread COVID liability over {yearsToComplete ? `~${yearsToComplete}` : 'many'} years. <a href="/model" onClick={() => track('cta_clicked', { location: 'trustfund', type: 'view_model' })}>See the full financial model →</a></p>
             </div>
           </div>
         </div>
       </section>
+
+      {/* Proposed Legislation Section — HIDDEN until bill number is finalized
+      <section className="legislation-section" id="legislation">
+        <div className="section-inner">
+          <span className="section-label">The Solution</span>
+          <h2 className="section-title">What the Proposed Legislation Does</h2>
+          <p className="section-desc" style={{ margin: '0 auto', textAlign: 'center' }}>
+            Bipartisan legislation is being developed to move COVID-19 vaccine injuries from CICP to VICP. Here are the key provisions under consideration.
+          </p>
+
+          <div className="legislation-grid">
+            <div className="legislation-card">
+              <div className="legislation-icon">🏛️</div>
+              <h4>Expands Special Masters</h4>
+              <p>Increases the minimum number of special masters from 8 to at least 10, with authority for more as needed to reduce backlogs.</p>
+            </div>
+            <div className="legislation-card">
+              <div className="legislation-icon">💉</div>
+              <h4>Adds COVID Vaccines to VICP</h4>
+              <p>Moves COVID-19 vaccine injury claims from CICP to VICP, giving claimants access to federal court, attorneys, and judicial review.</p>
+            </div>
+            <div className="legislation-card">
+              <div className="legislation-icon">📋</div>
+              <h4>Creates Table Injuries</h4>
+              <p>Adds myocarditis, pericarditis, GBS, TTS, anaphylaxis, and SIRVA to the Vaccine Injury Table — establishing presumptive causation.</p>
+            </div>
+            <div className="legislation-card">
+              <div className="legislation-icon">⏰</div>
+              <h4>Extends Filing Deadline</h4>
+              <p>Increases the statute of limitations to 5 years with an 8-year lookback period, giving COVID claimants who missed CICP&apos;s 1-year window a second chance.</p>
+            </div>
+            <div className="legislation-card">
+              <div className="legislation-icon">💰</div>
+              <h4>Raises Benefit Caps</h4>
+              <p>Increases the death benefit and pain &amp; suffering cap from $250,000 to $600,000 + CPI adjustment, reflecting current costs.</p>
+            </div>
+            <div className="legislation-card">
+              <div className="legislation-icon">🔬</div>
+              <h4>Covers New Vaccines</h4>
+              <p>Adds RSV, Shingles, and Dengue vaccines to VICP coverage. Also includes a catch-all for future vaccines recommended by CDC.</p>
+            </div>
+          </div>
+
+          <div className="legislation-funding">
+            <h4>How It&apos;s Funded</h4>
+            <p>The excise tax on vaccine doses increases from $0.75 to $2.20 — generating an estimated <strong>$825M per year</strong> in Trust Fund revenue. Combined with interest income, the program produces a <strong>$518M annual surplus</strong> while covering all existing and new claims.<sup><a href="#citations" className="citation-link">2,10</a></sup></p>
+            <a href="/model" className="legislation-model-link" onClick={() => track('cta_clicked', { location: 'legislation', type: 'view_model' })}>
+              See the full financial model →
+            </a>
+          </div>
+
+          <p className="legislation-note">
+            <em>Note: Final bill language and number are pending. Provisions shown reflect the current legislative framework under development.</em>
+          </p>
+        </div>
+      </section>
+      END Proposed Legislation Section */}
 
       {/* Action Section */}
       <section className="action-section" id="action">
@@ -959,14 +1217,14 @@ export default function HomePage() {
                   <div className="message-box">
                     <p>Dear [Representative/Senator],</p>
                     <p>I am writing to urge you to support legislation that would add COVID-19 vaccines to the National Vaccine Injury Compensation Program (VICP).</p>
-                    <p>Currently, Americans injured by COVID-19 vaccines must file claims through the Countermeasures Injury Compensation Program (CICP), which has a 0.3% approval rate compared to VICP&apos;s ~48%. CICP offers no judicial review, no pain and suffering damages, and requires claimants to pay their own attorney fees.</p>
+                    <p>Currently, Americans injured by COVID-19 vaccines must file claims through the Countermeasures Injury Compensation Program (CICP), which has a 0.3% approval rate compared to VICP&apos;s ~49%. CICP offers no judicial review, no pain and suffering damages, and requires claimants to pay their own attorney fees.</p>
                     <p>Fair compensation for vaccine injuries is not a partisan issue. It&apos;s about keeping our promise to Americans who did their part during a public health emergency.</p>
                     <p>Thank you for your consideration.</p>
                   </div>
                   <button
                     className="copy-message-btn"
                     onClick={(e) => {
-                      const message = `Dear [Representative/Senator],\n\nI am writing to urge you to support legislation that would add COVID-19 vaccines to the National Vaccine Injury Compensation Program (VICP).\n\nCurrently, Americans injured by COVID-19 vaccines must file claims through the Countermeasures Injury Compensation Program (CICP), which has a 0.3% approval rate compared to VICP's ~48%. CICP offers no judicial review, no pain and suffering damages, and requires claimants to pay their own attorney fees.\n\nFair compensation for vaccine injuries is not a partisan issue. It's about keeping our promise to Americans who did their part during a public health emergency.\n\nThank you for your consideration.`
+                      const message = `Dear [Representative/Senator],\n\nI am writing to urge you to support legislation that would add COVID-19 vaccines to the National Vaccine Injury Compensation Program (VICP).\n\nCurrently, Americans injured by COVID-19 vaccines must file claims through the Countermeasures Injury Compensation Program (CICP), which has a 0.3% approval rate compared to VICP's ~49%. CICP offers no judicial review, no pain and suffering damages, and requires claimants to pay their own attorney fees.\n\nFair compensation for vaccine injuries is not a partisan issue. It's about keeping our promise to Americans who did their part during a public health emergency.\n\nThank you for your consideration.`
                       navigator.clipboard.writeText(message)
                       track('message_copied')
                       const btn = e.currentTarget

@@ -6,7 +6,7 @@ import { Scale, Dices } from 'lucide-react'
 import { track } from '@vercel/analytics'
 
 interface HeaderProps {
-  activePage?: 'home' | 'faq' | 'resources' | 'survey' | 'donate'
+  activePage?: 'home' | 'faq' | 'resources' | 'survey' | 'donate' | 'model' | 'guide'
   onRouletteOpen?: () => void
 }
 
@@ -42,17 +42,10 @@ export default function Header({ activePage, onRouletteOpen }: HeaderProps) {
           <li><Link href="/#funnel" onClick={() => setMobileNavOpen(false)}>The Gap</Link></li>
           <li><Link href="/#comparison" onClick={() => setMobileNavOpen(false)}>Compare Programs</Link></li>
           <li><Link href="/#trustfund" onClick={() => setMobileNavOpen(false)}>Trust Fund</Link></li>
+          <li><Link href="/model" className={activePage === 'model' ? 'active' : ''} onClick={() => setMobileNavOpen(false)}>Model</Link></li>
           <li><Link href="/faq" className={activePage === 'faq' ? 'active' : ''} onClick={() => setMobileNavOpen(false)}>FAQ</Link></li>
           <li><Link href="/resources" className={activePage === 'resources' ? 'active' : ''} onClick={() => setMobileNavOpen(false)}>Data</Link></li>
-          <li><Link href="/survey" className={activePage === 'survey' ? 'active' : ''} onClick={() => setMobileNavOpen(false)}>Survey</Link></li>
-          {onRouletteOpen && (
-            <li>
-              <button className="nav-link-btn" onClick={handleRouletteClick}>
-                <Dices size={16} style={{ marginRight: '6px', verticalAlign: 'middle' }} />
-                Roulette
-              </button>
-            </li>
-          )}
+          <li><Link href="/guide" className={activePage === 'guide' ? 'active' : ''} onClick={() => setMobileNavOpen(false)}>What To Do</Link></li>
           <li className="mobile-only">
             <Link href="/#action" className="nav-cta mobile" onClick={() => { setMobileNavOpen(false); track('cta_clicked', { location: 'nav_mobile', type: 'contact_congress' }) }}>Contact Congress</Link>
           </li>

@@ -48,3 +48,6 @@ node_modules/
 /playwright-report/
 /blob-report/
 /playwright/.cache/
+
+# Internal negotiating documents (not for public repo)
+VICP_Financial_Model_Briefing.md

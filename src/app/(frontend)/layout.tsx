@@ -6,13 +6,13 @@ import { WebVitals } from './components/WebVitals'
 
 export const metadata = {
   title: 'U.S. Covid Vaccine Injuries | Fair Compensation for Americans',
-  description: '14,046 COVID-19 vaccine injury claims filed with CICP. Only 42 compensated - a 0.3% approval rate vs. 48% for VICP. Learn about the compensation gap and take action for reform.',
+  description: '14,075 COVID-19 vaccine injury claims filed with CICP. Only 44 compensated - a 0.3% approval rate vs. 49% for VICP. Learn about the compensation gap and take action for reform.',
   keywords: 'COVID vaccine injury, CICP, vaccine compensation, VICP, vaccine injury claim, PREP Act, myocarditis, vaccine side effects, HRSA, vaccine injury reform',
   authors: [{ name: 'U.S. Covid Vaccine Injuries' }],
   openGraph: {
     type: 'website',
     url: 'https://covidvaccineinjury.us/',
-    title: 'U.S. Covid Vaccine Injuries | 1.6M Reports. 14,046 Claims. 42 Compensated.',
+    title: 'U.S. Covid Vaccine Injuries | 1.6M Reports. 14,075 Claims. 44 Compensated.',
     description: 'The CICP has a 0.3% approval rate. Americans injured by COVID vaccines deserve fair compensation. Learn the facts and take action.',
     siteName: 'U.S. Covid Vaccine Injuries',
     images: [
@@ -26,7 +26,7 @@ export const metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'U.S. Covid Vaccine Injuries | 1.6M Reports. 14,046 Claims. 42 Compensated.',
+    title: 'U.S. Covid Vaccine Injuries | 1.6M Reports. 14,075 Claims. 44 Compensated.',
     description: 'The CICP has a 0.3% approval rate. Americans deserve fair compensation. Learn the facts and take action.',
     images: ['https://covidvaccineinjury.us/og-image.png'],
   },

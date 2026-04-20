@@ -89,7 +89,7 @@ export default function FAQPage() {
               </ol>
               <div className="callout">
                 <div className="callout-title">Program Statistics</div>
-                Since 1988, VICP has compensated over 12,300 individuals totaling more than $5.4 billion. However, the program currently has over 5,000 pending claims, and critics note it has become increasingly adversarial in recent years.
+                Since 1988, VICP has compensated over 12,889 individuals totaling nearly $5 billion in awards. However, the program currently has over 5,000 pending claims, and critics note it has become increasingly adversarial in recent years.
               </div>
             </>
           )
@@ -114,7 +114,7 @@ export default function FAQPage() {
                 </div>
                 <div className="timeline-item">
                   <div className="timeline-year">Present</div>
-                  <div className="timeline-text">VICP has paid over $5.4 billion to more than 12,300 individuals. However, the program faces challenges: over 5,000 claims remain pending, the $0.75 excise tax has not been adjusted since 1986, and proceedings have become increasingly adversarial with the Department of Justice.</div>
+                  <div className="timeline-text">VICP has paid nearly $5 billion in awards to more than 12,889 individuals. However, the program faces challenges: over 5,000 claims remain pending, the $0.75 excise tax has not been adjusted since 1986, and proceedings have become increasingly adversarial with the Department of Justice.</div>
                 </div>
               </div>
             </>
@@ -191,7 +191,7 @@ export default function FAQPage() {
           question: "What is VICP's approval rate?",
           answer: (
             <>
-              <p>According to HRSA statistics, VICP has an approval rate of approximately <strong>48%</strong> for petitions adjudicated since 1988. More recent data (2006-2023) shows a higher rate of approximately 73% (9,675 compensated of 13,326 adjudicated).</p>
+              <p>According to HRSA statistics, VICP has an approval rate of approximately <strong>49%</strong> for petitions adjudicated since 1988. More recent data (2006-2023) shows a higher rate of approximately 73% (9,675 compensated of 13,326 adjudicated).</p>
               <p>Compensation can occur through:</p>
               <ul>
                 <li>Claims where the injury is listed on the Vaccine Injury Table (presumptive causation)</li>
@@ -248,7 +248,7 @@ export default function FAQPage() {
           question: "What is CICP's approval rate and why is it so low?",
           answer: (
             <>
-              <p>As of December 2025, CICP has rendered decisions on 6,273 COVID-19 claims, finding only <strong>87 eligible for compensation</strong> (1.4%). Of those, <strong>42 have been paid</strong>. This compares to VICP&apos;s approximately 48% compensation rate.</p>
+              <p>As of December 2025, CICP has rendered decisions on 6,421 COVID-19 claims, finding only <strong>87 eligible for compensation</strong> (1.4%). Of those, <strong>44 have been paid</strong>. This compares to VICP&apos;s approximately 49% compensation rate.</p>
               <p>Several factors contribute to this low rate:</p>
               <ol>
                 <li><strong>No COVID-19 Injury Table:</strong> While CICP has injury tables for smallpox and pandemic influenza, HHS has not established one for COVID-19 vaccines. Claimants must independently prove causation for every claim.</li>
@@ -260,7 +260,7 @@ export default function FAQPage() {
               <table className="faq-table">
                 <tbody>
                   <tr><th>Metric</th><th>CICP</th><th>VICP</th></tr>
-                  <tr><td>Compensation Rate</td><td style={{ color: 'var(--danger)', fontWeight: 600 }}>1.4%</td><td style={{ color: 'var(--success)', fontWeight: 600 }}>~48%</td></tr>
+                  <tr><td>Compensation Rate</td><td style={{ color: 'var(--danger)', fontWeight: 600 }}>1.4%</td><td style={{ color: 'var(--success)', fontWeight: 600 }}>~49%</td></tr>
                   <tr><td>Filing Deadline</td><td>1 year from administration</td><td>3 years from symptom onset</td></tr>
                   <tr><td>Pain &amp; Suffering</td><td style={{ color: 'var(--danger)' }}>Not covered</td><td style={{ color: 'var(--success)' }}>Up to $250,000</td></tr>
                   <tr><td>Attorney Fees</td><td style={{ color: 'var(--danger)' }}>Not covered</td><td style={{ color: 'var(--success)' }}>Covered by program</td></tr>
@@ -290,7 +290,7 @@ export default function FAQPage() {
           question: 'How much has CICP actually paid to COVID vaccine injury claimants?',
           answer: (
             <>
-              <p>As of December 2025, CICP has compensated <strong>42 COVID-19 vaccine injury claims</strong> with payments totaling approximately <strong>$575,000</strong> for COVID-specific injuries.</p>
+              <p>As of December 2025, CICP has compensated <strong>44 COVID-19 vaccine injury claims</strong> with payments totaling approximately <strong>$575,000</strong> for COVID-specific injuries.</p>
               <p>Context on these payments:</p>
               <ul>
                 <li>Most compensated injuries are myocarditis, pericarditis, anaphylaxis, and Guillain-Barré Syndrome</li>
@@ -298,7 +298,7 @@ export default function FAQPage() {
                 <li>One outlier payment of $370,000 skews the average significantly</li>
                 <li>The median payment (excluding outliers) is approximately <strong>$4,000</strong></li>
               </ul>
-              <p>For context, VICP&apos;s average payment per compensated claim is approximately <strong>$450,000</strong>.</p>
+              <p>For context, VICP&apos;s lifetime average payment per compensated claim is approximately <strong>$386,000</strong>.</p>
               <div className="callout">
                 <div className="callout-title">Note on Total CICP Payments</div>
                 CICP reports approximately $6.5 million in total payments since 2010, but the majority ($6.1 million) was paid for H1N1 pandemic influenza injuries, not COVID-19 vaccine injuries.

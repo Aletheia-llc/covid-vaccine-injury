@@ -34,28 +34,40 @@ const resources = [
   { title: "VICP FAQ", description: "Frequently asked questions about VICP eligibility and process", url: "https://www.hrsa.gov/vaccine-compensation/faq", category: "vicp-stats" as const, sourceType: "government" as const, order: 29 },
   { title: "CICP Request for Benefits Form", description: "Official claim submission form for CICP", url: "https://www.hrsa.gov/cicp/filing", category: "cicp-stats" as const, sourceType: "government" as const, order: 30 },
   { title: "VICP Petition Forms", description: "Required forms for filing VICP petitions", url: "https://www.hrsa.gov/vaccine-compensation/filing", category: "vicp-stats" as const, sourceType: "government" as const, order: 31 },
+
+  // Financial Model Sources (H.R. 5142 Analysis)
+  { title: "HRSA VICP Monthly Statistics Report (March 2026)", description: "Petitions filed, adjudications, awards paid, and dose distribution data used in H.R. 5142 financial model", url: "https://www.hrsa.gov/sites/default/files/hrsa/vicp/vicp-stats-03-01-26.pdf", category: "vicp-stats" as const, sourceType: "government" as const, order: 32 },
+  { title: "CDC MMWR: RSV Vaccine Safety Findings", description: "GBS rates of 4.4-6.5 per million doses in adults 60+, used for new vaccine claim projections", url: "https://www.cdc.gov/mmwr/volumes/73/wr/mm7321a3.htm", category: "vicp-stats" as const, sourceType: "government" as const, order: 33 },
+  { title: "FDA: RSV Vaccine GBS Warning Requirement", description: "January 2025 safety communication requiring GBS warning on Abrysvo and Arexvy prescribing information", url: "https://www.fda.gov/safety/medical-product-safety-information/fda-requires-guillain-barre-syndrome-gbs-warning-prescribing-information-rsv-vaccines-abrysvo-and", category: "vicp-stats" as const, sourceType: "government" as const, order: 34 },
+  { title: "CRS IF12625: Judiciary Budget Request, FY2025", description: "Office of Special Masters budget ($10M/yr for 8 masters). Used to derive ~$1.25M per special master cost", url: "https://www.everycrsreport.com/reports/IF12625.html", category: "legislation" as const, sourceType: "government" as const, order: 35 },
+  { title: "CRS IF13011: Judiciary Budget Request, FY2026", description: "FY2026 request of $12M for OSM (20% increase), anticipating expanded special master capacity", url: "https://www.everycrsreport.com/reports/IF13011.html", category: "legislation" as const, sourceType: "government" as const, order: 36 },
+  { title: "42 U.S.C. 300aa-12: Special Master Compensation", description: "Statutory salary caps for VICP special masters (Executive Schedule Level IV/V)", url: "https://uscode.house.gov/view.xhtml?req=granuleid:USC-prelim-title42-section300aa-12&num=0&edition=prelim", category: "legislation" as const, sourceType: "legal" as const, order: 37 },
+  { title: "OPM Executive Schedule Pay Tables (2026)", description: "Current salary rates for Executive Schedule Level IV ($197,200) and Level V ($184,900)", url: "https://www.opm.gov/policy-data-oversight/pay-leave/salaries-wages/salary-tables/26Tables/exec/html/EX.aspx", category: "legislation" as const, sourceType: "government" as const, order: 38 },
+  { title: "26 U.S.C. 9510: Vaccine Injury Compensation Trust Fund", description: "Statutory framework for the Trust Fund including administrative expense caps ($9.5M) and excise tax provisions", url: "https://www.law.cornell.edu/uscode/text/26/9510", category: "legislation" as const, sourceType: "legal" as const, order: 39 },
+  { title: "GAO-15-142: Vaccine Injury Program Administration", description: "GAO report on VICP administrative costs across three agencies (USCFC, HRSA, DOJ) with staffing data", url: "https://www.gao.gov/products/gao-15-142", category: "gao" as const, sourceType: "government" as const, order: 40 },
+  { title: "H.R. 5142: Vaccine Injury Compensation Modernization Act", description: "Full bill text — raises special masters to 10+, adds COVID vaccines to VICP, increases excise to $2.20", url: "https://www.congress.gov/bill/118th-congress/house-bill/5142/text", category: "legislation" as const, sourceType: "legal" as const, order: 41 },
 ]
 
 const statistics = [
   // CICP Statistics
-  { key: 'cicp_claims_filed', label: 'CICP Claims Filed', value: '14,046', numericValue: 14046, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 1 },
-  { key: 'cicp_compensated', label: 'Americans Compensated', value: '42', numericValue: 42, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 2 },
-  { key: 'cicp_approval_rate', label: 'CICP Approval Rate', value: '0.3%', numericValue: 0.3, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 3 },
-  { key: 'cicp_decisions_rendered', label: 'Decisions Rendered', value: '6,273', numericValue: 6273, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 4 },
-  { key: 'cicp_pending_percent', label: 'Claims Still Pending', value: '55%', numericValue: 55, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 5 },
-  { key: 'cicp_denial_rate', label: 'Decided Claims Denied', value: '99.3%', numericValue: 99.3, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 6 },
+  { key: 'cicp_claims_filed', label: 'CICP Claims Filed', value: '14,075', numericValue: 14075, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2026-01-01', displayOnHomepage: true, displayOrder: 1 },
+  { key: 'cicp_compensated', label: 'Americans Compensated', value: '44', numericValue: 44, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2026-01-01', displayOnHomepage: true, displayOrder: 2 },
+  { key: 'cicp_approval_rate', label: 'CICP Approval Rate', value: '0.3%', numericValue: 0.3, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2026-01-01', displayOnHomepage: true, displayOrder: 3 },
+  { key: 'cicp_decisions_rendered', label: 'Decisions Rendered', value: '6,421', numericValue: 6421, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2026-01-01', displayOnHomepage: true, displayOrder: 4 },
+  { key: 'cicp_pending_percent', label: 'Claims Still Pending', value: '54%', numericValue: 54, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2026-01-01', displayOnHomepage: true, displayOrder: 5 },
+  { key: 'cicp_denial_rate', label: 'Decided Claims Denied', value: '98.6%', numericValue: 98.6, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2026-01-01', displayOnHomepage: true, displayOrder: 6 },
   { key: 'cicp_avg_decision_time', label: 'Average Time to Decision', value: '24 mo', numericValue: 24, program: 'cicp' as const, source: 'GAO Report GAO-25-107368', sourceUrl: 'https://www.gao.gov/products/gao-25-107368', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 7 },
-  { key: 'cicp_total_paid', label: 'CICP Total Paid', value: '$6.5M', numericValue: 6500000, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 8 },
-  { key: 'cicp_median_payment', label: 'Typical CICP Payment', value: '$4,132', numericValue: 4132, program: 'cicp' as const, source: 'HRSA Table 4', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data/table-4', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 9 },
-  { key: 'cicp_outlier_payment', label: 'Single TTS Case Payment', value: '$5.94M', numericValue: 5940000, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 10 },
-  { key: 'cicp_others_total', label: 'Other 41 Cases Total', value: '$575K', numericValue: 575000, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 11 },
+  { key: 'cicp_total_paid', label: 'CICP Total Paid', value: '$6.5M', numericValue: 6500000, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2026-01-01', displayOnHomepage: true, displayOrder: 8 },
+  { key: 'cicp_median_payment', label: 'Typical CICP Payment', value: '$4,132', numericValue: 4132, program: 'cicp' as const, source: 'HRSA Table 4', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data/table-4', asOfDate: '2026-01-01', displayOnHomepage: true, displayOrder: 9 },
+  { key: 'cicp_outlier_payment', label: 'Single TTS Case Payment', value: '$5.94M', numericValue: 5940000, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2026-01-01', displayOnHomepage: true, displayOrder: 10 },
+  { key: 'cicp_others_total', label: 'Other 43 Cases Total', value: '$575K', numericValue: 575000, program: 'cicp' as const, source: 'HRSA CICP Data', sourceUrl: 'https://www.hrsa.gov/cicp/cicp-data', asOfDate: '2026-01-01', displayOnHomepage: true, displayOrder: 11 },
 
   // VICP Statistics
-  { key: 'vicp_approval_rate', label: 'VICP Approval Rate', value: '~48%', numericValue: 48, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 12 },
-  { key: 'vicp_total_compensated', label: 'VICP Total Compensated', value: '12,300+', numericValue: 12300, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 13 },
-  { key: 'vicp_total_claims', label: 'VICP Total Claims', value: '~29,000', numericValue: 29000, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 14 },
-  { key: 'vicp_total_paid', label: 'VICP Total Paid', value: '$5.4B', numericValue: 5400000000, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 15 },
-  { key: 'vicp_average_award', label: 'Average VICP Award', value: '$450,000', numericValue: 450000, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 16 },
+  { key: 'vicp_approval_rate', label: 'VICP Approval Rate', value: '~49%', numericValue: 49, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2026-03-01', displayOnHomepage: true, displayOrder: 12 },
+  { key: 'vicp_total_compensated', label: 'VICP Total Compensated', value: '12,889', numericValue: 12889, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2026-03-01', displayOnHomepage: true, displayOrder: 13 },
+  { key: 'vicp_total_claims', label: 'VICP Total Claims', value: '~29,670', numericValue: 29670, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2026-03-01', displayOnHomepage: true, displayOrder: 14 },
+  { key: 'vicp_total_paid', label: 'VICP Total Paid (Awards)', value: '$4.97B', numericValue: 4970000000, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2026-03-01', displayOnHomepage: true, displayOrder: 15 },
+  { key: 'vicp_average_award', label: 'Average VICP Award', value: '$386,000', numericValue: 386000, program: 'vicp' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2026-03-01', displayOnHomepage: true, displayOrder: 16 },
 
   // General/Trust Fund Statistics
   { key: 'trust_fund_balance', label: 'VICP Trust Fund Balance', value: '$4.5B', numericValue: 4500000000, program: 'general' as const, source: 'HRSA VICP Data', sourceUrl: 'https://www.hrsa.gov/vaccine-compensation/data', asOfDate: '2024-12-01', displayOnHomepage: true, displayOrder: 17 },
@@ -77,7 +89,7 @@ const faqs = [
   },
   {
     question: "What is the VICP compensation rate?",
-    answer: "The VICP has compensated approximately 36% of all petitions adjudicated since 1988, with over $5 billion paid out to date. The average compensated claim receives around $600,000.",
+    answer: "The VICP has compensated approximately 49% of all petitions adjudicated since 1988, with nearly $5 billion in awards paid out to date. The lifetime average compensated claim receives around $386,000.",
     category: "vicp" as const,
     order: 3,
   },
@@ -96,7 +108,7 @@ const faqs = [
   },
   {
     question: "Why is CICP compensation so low?",
-    answer: "CICP has compensated only about 4% of COVID-19 vaccine injury claims filed. The program has a strict 1-year filing deadline, requires a higher standard of proof, provides no legal representation, and offers limited benefits with caps on lost wages and no pain and suffering damages.",
+    answer: "CICP has compensated only about 0.3% of COVID-19 vaccine injury claims filed (44 of 14,075). The program has a strict 1-year filing deadline, requires a higher standard of proof, provides no legal representation, and offers limited benefits with caps on lost wages and no pain and suffering damages.",
     category: "cicp" as const,
     order: 2,
   },
@@ -152,7 +164,7 @@ const faqs = [
   },
   {
     question: "How can I support reform efforts?",
-    answer: "Contact your Congressional representatives to express support for CICP reform legislation. Share your story with advocacy organizations. The VICP Trust Fund has over $4.8 billion in reserves that could help fund expanded compensation for COVID vaccine injuries.",
+    answer: "Contact your Congressional representatives to express support for CICP reform legislation. Share your story with advocacy organizations. The VICP Trust Fund has over $4.5 billion in reserves that could help fund expanded compensation for COVID vaccine injuries.",
     category: "reform" as const,
     order: 3,
   },

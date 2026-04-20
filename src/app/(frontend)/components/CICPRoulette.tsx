@@ -5,16 +5,16 @@ import Link from 'next/link';
 
 const CONFIG = {
   cicp: {
-    chance: 0.003,      // 0.3% = 42/14,046
+    chance: 0.003,      // 0.3% = 44/14,075
     name: 'CICP',
     odds: '0.3%',
     degreesWin: 1.08    // 0.3% of 360°
   },
   vicp: {
-    chance: 0.48,       // ~48% historical approval
+    chance: 0.49,       // ~49% historical approval
     name: 'VICP',
-    odds: '~48%',
-    degreesWin: 172.8   // 48% of 360°
+    odds: '~49%',
+    degreesWin: 176.4   // 49% of 360°
   }
 };
 
@@ -377,7 +377,7 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false, onClose })
         ? `I filed ${gameState.attempts} claims in CICP Roulette and was DENIED every time. The real approval rate is just 0.3%. COVID vaccine injuries deserve fair compensation.`
         : `${gameState.wins} of ${gameState.attempts} claims approved in CICP Roulette (${yourRate}%). The real rate is 0.3%. Americans deserve better.`;
     } else {
-      text = `In VICP Roulette: ${gameState.wins} of ${gameState.attempts} approved (${yourRate}%). VICP works at ~48%. Why don&apos;t COVID vaccine injuries get the same fair treatment?`;
+      text = `In VICP Roulette: ${gameState.wins} of ${gameState.attempts} approved (${yourRate}%). VICP works at ~49%. Why don&apos;t COVID vaccine injuries get the same fair treatment?`;
     }
 
     text += ' https://covidvaccineinjury.us #CICPReform';
@@ -401,12 +401,12 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false, onClose })
         return (
           <>
             <strong>🎉 APPROVED!</strong><br />
-            You beat the 0.3% odds. Only 42 real Americans have done this.
+            You beat the 0.3% odds. Only 44 real Americans have done this.
           </>
         );
       } else {
         const messages = [
-          "Join the other 14,004 Americans still waiting.",
+          "Join the other 14,031 Americans still waiting.",
           "No lawyer. No appeal. No recourse.",
           "The 1-year deadline means most never even file.",
           "Try the VICP toggle to see what fair looks like."
@@ -422,14 +422,14 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false, onClose })
         return (
           <>
             <strong>✅ APPROVED!</strong><br />
-            With ~48% odds, this is what fair compensation looks like.
+            With ~49% odds, this is what fair compensation looks like.
           </>
         );
       } else {
         return (
           <>
             <strong>❌ DENIED.</strong><br />
-            Even at ~48%, not everyone wins—but you had a real chance and can appeal.
+            Even at ~49%, not everyone wins—but you had a real chance and can appeal.
           </>
         );
       }
@@ -604,7 +604,7 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false, onClose })
           }
 
           .chamber.vicp {
-            background: conic-gradient(#2d5a3d 0deg 172.8deg, #8b2635 172.8deg 360deg);
+            background: conic-gradient(#2d5a3d 0deg 176.4deg, #8b2635 176.4deg 360deg);
           }
 
           .chamber::before {
@@ -1140,11 +1140,11 @@ const CICPRoulette: React.FC<CICPRouletteProps> = ({ compact = false, onClose })
           <div className={`stat-box cicp ${gameState.mode === 'cicp' ? 'active' : ''}`}>
             <div className="stat-box-title">CICP (COVID)</div>
             <div className="stat-box-rate">0.3%</div>
-            <div className="stat-box-detail">42 of 14,046 compensated</div>
+            <div className="stat-box-detail">44 of 14,075 compensated</div>
           </div>
           <div className={`stat-box vicp ${gameState.mode === 'vicp' ? 'active' : ''}`}>
             <div className="stat-box-title">VICP (Other Vaccines)</div>
-            <div className="stat-box-rate">~48%</div>
+            <div className="stat-box-rate">~49%</div>
             <div className="stat-box-detail">Fair process with lawyers</div>
           </div>
         </div>
